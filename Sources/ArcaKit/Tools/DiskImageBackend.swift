@@ -111,7 +111,7 @@ final class DiskImageBackend: FolderBackend {
                     "-mountrandom", FileManager.default.temporaryDirectory.path]
         if encrypted { args.append("-stdinpass") }
         args.append(path)
-        let result = try Self.attach(hdiutil, args, password: encrypted ? passwords.last : nil)
+        let result = try DiskImageBackend.attach(hdiutil, args, password: encrypted ? passwords.last : nil)
         guard result.status == 0 else {
             if encrypted { throw ArchiveError.wrongPassword(entry: "") }
             throw ArchiveError.toolFailed(result.stderr.trimmingCharacters(in: .whitespacesAndNewlines))
@@ -139,7 +139,7 @@ final class DiskImageBackend: FolderBackend {
         process.standardOutput = output
         process.standardError = error
         try process.run()
-        input.fileHandleForWriting.write(Data(password.utf8))
+        input.fileHandleForWriting.write(Data(password.utf8) + Data([0]))  // -stdinpass expects NUL-terminated
         try? input.fileHandleForWriting.close()
         let out = output.fileHandleForReading.readDataToEndOfFile()
         let err = error.fileHandleForReading.readDataToEndOfFile()
