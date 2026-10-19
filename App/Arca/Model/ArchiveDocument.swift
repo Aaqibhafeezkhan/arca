@@ -119,6 +119,8 @@ final class ArchiveDocument {
             self.archive = archive
             snapshot = try await archive.snapshot()
             if supportsEncryption, snapshot?.isEncrypted == true { encryptionPassword = passwords.last }
+            // Launch argument used by App/Scripts/screenshots.sh: `-ArcaReveal <path>`.
+            if let path = UserDefaults.standard.string(forKey: "ArcaReveal") { reveal(path) }
         } catch let error as ArchiveError where error.isPasswordError {
             // Encrypted headers (e.g. 7z): the listing itself needs the password.
             passwordPrompt = PasswordPrompt(message: error.localizedDescription, onCancel: { [weak self] in
@@ -209,6 +211,15 @@ final class ArchiveDocument {
     func goUp() {
         guard !currentFolder.isEmpty else { return }
         navigate(to: ArchivePath.parent(currentFolder))
+    }
+
+    /// Shows `path` in its folder, selected.
+    func reveal(_ path: String) {
+        guard let node = tree.node(path) else { return }
+        let folder = node.isDirectory ? path : ArchivePath.parent(path)
+        expandAncestors(of: folder)
+        navigate(to: folder)
+        if folder != path { selection = [path] }
     }
 
     private func expandAncestors(of path: String) {

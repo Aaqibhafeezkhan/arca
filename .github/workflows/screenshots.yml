@@ -1,0 +1,21 @@
+name: Screenshots
+
+on:
+  workflow_dispatch:
+
+jobs:
+  capture:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Build Arca.app
+        run: App/Scripts/build-app.sh dist
+      - name: Capture
+        run: App/Scripts/screenshots.sh dist/Arca.app screenshots
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: screenshots

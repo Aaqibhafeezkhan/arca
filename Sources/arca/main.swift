@@ -15,7 +15,8 @@ usage: arca <command> <archive> [args]
   compact  <archive>                       reclaim space left by in-place edits
   create   <archive> <file>...             create a new archive (format from extension)
 
-options: -p <password>   (repeatable; for encrypted entries / AES-256 when adding)
+options: --version       print the version
+         -p <password>   (repeatable; for encrypted entries / AES-256 when adding)
          -0 ... -9       compression level
 """
 
@@ -29,6 +30,10 @@ func formatSize(_ n: UInt64) -> String {
 }
 
 var args = Array(CommandLine.arguments.dropFirst())
+if args.first == "--version" {
+    print("arca \(ArcaVersion.string)")
+    exit(0)
+}
 var passwords: [String] = []
 var level = 6
 var positional: [String] = []
