@@ -17,7 +17,7 @@ final class AESBlockEncryptor {
             CCCryptorCreate(CCOperation(kCCEncrypt), CCAlgorithm(kCCAlgorithmAES), CCOptions(kCCOptionECBMode),
                             $0.baseAddress, key.count, nil, &cryptor)
         }
-        guard status == kCCSuccess else { throw ArchiveError.unsupported("AES unavailable (\(status))") }
+        guard status == CCCryptorStatus(kCCSuccess) else { throw ArchiveError.unsupported("AES unavailable (\(status))") }
         #else
         soft = SoftAES(key: key)
         #endif
@@ -113,7 +113,7 @@ func pbkdf2SHA1(password: [UInt8], salt: [UInt8], iterations: Int, keyLength: In
                                  out.baseAddress?.assumingMemoryBound(to: UInt8.self), keyLength)
         }
     }
-    precondition(status == kCCSuccess, "PBKDF2 failed")
+    precondition(status == Int32(kCCSuccess), "PBKDF2 failed")
     return derived
     #else
     var derived: [UInt8] = []
