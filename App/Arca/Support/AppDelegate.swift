@@ -37,9 +37,7 @@ final class WindowRouter {
 
     func register(_ action: OpenWindowAction) {
         openWindow = action
-        // Deferred so the window's welcome view registers as adopter first:
-        // an archive opened at launch then reuses that window instead of adding one.
-        DispatchQueue.main.async { self.flush() }
+        flush()
     }
 
     func addAdopter(_ id: UUID, _ adopt: @escaping (URL) -> Void) {

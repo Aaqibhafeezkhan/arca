@@ -37,6 +37,7 @@ enum WindowID {
 struct RootView: View {
     @Binding var url: URL?
     @Environment(\.openWindow) private var openWindow
+    @State private var adopterID = UUID()
 
     var body: some View {
         Group {
@@ -47,6 +48,14 @@ struct RootView: View {
                 WelcomeView(adopt: { url = $0 })
             }
         }
-        .onAppear { WindowRouter.shared.register(openWindow) }
+        .onAppear {
+            // Adopter before register: an archive opened at launch must land in this window.
+            if url == nil { WindowRouter.shared.addAdopter(adopterID) { url = $0 } }
+            WindowRouter.shared.register(openWindow)
+        }
+        .onChange(of: url) { _, new in
+            if new != nil { WindowRouter.shared.removeAdopter(adopterID) }
+        }
+        .onDisappear { WindowRouter.shared.removeAdopter(adopterID) }
     }
 }

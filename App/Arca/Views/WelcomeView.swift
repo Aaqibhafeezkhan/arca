@@ -5,7 +5,6 @@ import SwiftUI
 struct WelcomeView: View {
     let adopt: (URL) -> Void
     @Environment(\.openWindow) private var openWindow
-    @State private var adopterID = UUID()
     @State private var isTargeted = false
     @State private var recents: [URL] = []
 
@@ -27,9 +26,7 @@ struct WelcomeView: View {
         } isTargeted: { isTargeted = $0 }
         .onAppear {
             recents = WindowRouter.shared.recentArchives
-            WindowRouter.shared.addAdopter(adopterID, adopt)
         }
-        .onDisappear { WindowRouter.shared.removeAdopter(adopterID) }
         .navigationTitle("Arca")
     }
 
