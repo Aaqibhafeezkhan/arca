@@ -32,16 +32,27 @@ final class WindowRouter {
     static let shared = WindowRouter()
 
     private var openWindow: OpenWindowAction?
-    private var adopters: [(id: UUID, adopt: (URL) -> Void)] = []
+    private var adopters: [(id: UUID, adopt: (URL) -> Void, dismiss: () -> Void)] = []
     private var queue: [URL] = []
+    private let launched = Date()
+    private var routedAtLaunch = false
+
+    /// A file opened at a cold launch can reach SwiftUI after it has created the
+    /// default window, and it then adds a second, blank one. Blank windows around
+    /// launch are closed once an archive has been routed.
+    private var isLaunching: Bool { Date().timeIntervalSince(launched) < 3 }
 
     func register(_ action: OpenWindowAction) {
         openWindow = action
         flush()
     }
 
-    func addAdopter(_ id: UUID, _ adopt: @escaping (URL) -> Void) {
-        adopters.append((id, adopt))
+    func addAdopter(_ id: UUID, adopt: @escaping (URL) -> Void, dismiss: @escaping () -> Void) {
+        if routedAtLaunch && isLaunching {
+            dismiss()
+            return
+        }
+        adopters.append((id, adopt, dismiss))
         flush()
     }
 
@@ -55,6 +66,7 @@ final class WindowRouter {
     }
 
     private func flush() {
+        var routed = false
         while let url = queue.first {
             if !adopters.isEmpty {
                 adopters.removeFirst().adopt(url)
@@ -64,7 +76,14 @@ final class WindowRouter {
                 return // No scene yet; retried once a window registers.
             }
             queue.removeFirst()
+            routed = true
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
+        }
+        if routed && isLaunching {
+            routedAtLaunch = true
+            let blank = adopters
+            adopters.removeAll()
+            blank.forEach { $0.dismiss() }
         }
     }
 

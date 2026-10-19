@@ -17,12 +17,11 @@ jobs:
         continue-on-error: true
         run: |
           brew install displayplacer
-          displayplacer list | grep -E "^Persistent|^Resolution|mode .*res:(1[4-9]|2)[0-9]{2}x" | head -40
           ID=$(displayplacer list | awk '/^Persistent screen id:/ {print $4; exit}')
           for r in 1920x1200 1920x1080 1680x1050 1440x900 1280x800; do
             displayplacer "id:$ID res:$r scaling:off" && { echo "display → $r"; break; }
           done
-          system_profiler SPDisplaysDataType | grep -i resolution
+          system_profiler SPDisplaysDataType | grep -i resolution || true
       - name: Capture
         run: App/Scripts/screenshots.sh dist/Arca.app screenshots
       - uses: actions/upload-artifact@v4
