@@ -12,8 +12,14 @@ jobs:
     container: swift:6.2-noble
     steps:
       - uses: actions/checkout@v4
-      - name: Install libarchive
-        run: apt-get update -qq && apt-get install -y -qq libarchive-dev zlib1g-dev zip unzip xz-utils
+      - name: Install libarchive, 7-Zip and RAR
+        run: |
+          apt-get update -qq && apt-get install -y -qq libarchive-dev zlib1g-dev zip unzip xz-utils curl
+          mkdir -p /opt/tools && cd /opt/tools
+          curl -fsSL https://github.com/ip7z/7zip/releases/download/26.04/7z2604-linux-x64.tar.xz | tar -xJ 7zz
+          curl -fsSL https://www.rarlab.com/rar/rarlinux-x64-712.tar.gz | tar -xz rar/rar
+          echo "ARCA_7ZZ=/opt/tools/7zz" >> "$GITHUB_ENV"
+          echo "ARCA_RAR=/opt/tools/rar/rar" >> "$GITHUB_ENV"
       - name: Test
         run: swift test
 
@@ -25,6 +31,13 @@ jobs:
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
+      - name: Fetch 7-Zip and RAR
+        shell: bash
+        run: |
+          App/Scripts/fetch-7zz.sh
+          mkdir -p /tmp/rar && curl -fsSL https://www.rarlab.com/rar/rarmacos-arm-712.tar.gz | tar -xz -C /tmp/rar
+          echo "ARCA_7ZZ=$PWD/App/Vendor/7zz" >> "$GITHUB_ENV"
+          echo "ARCA_RAR=/tmp/rar/rar/rar" >> "$GITHUB_ENV"
       - name: Test ArcaKit
         shell: bash
         run: swift test
@@ -39,3 +52,9 @@ jobs:
           cd App
           xcodebuild -project Arca.xcodeproj -scheme Arca -configuration Debug \
             -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build | xcbeautify --renderer github-actions
+      - name: Check bundled 7-Zip
+        shell: bash
+        run: |
+          APP=$(find ~/Library/Developer/Xcode/DerivedData -name Arca.app -path '*Debug*' | head -1)
+          "$APP/Contents/MacOS/7zz" | head -1
+          test -f "$APP/Contents/Resources/7-Zip License.txt"

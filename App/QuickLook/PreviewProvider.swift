@@ -8,6 +8,11 @@ final class PreviewProvider: QLPreviewProvider, QLPreviewingController {
     func providePreview(for request: QLFilePreviewRequest) async throws -> QLPreviewReply {
         // Sandboxed and read-only: never touch the shared journal folder.
         let journal = JournalStore(directory: FileManager.default.temporaryDirectory.appendingPathComponent("journals"))
+        // Arca.app/Contents/PlugIns/ArcaQuickLook.appex → Arca.app/Contents/MacOS/7zz.
+        // If the sandbox refuses to launch it, ArcaKit falls back to libarchive.
+        let bundled = Bundle.main.bundleURL.deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("MacOS/7zz")
+        ExternalTools.setOverride(bundled, for: "7zz")
         let archive = try await Archive.open(request.fileURL, journal: journal)
         let snapshot = try await archive.snapshot()
         let html = ListingRenderer.html(for: snapshot)

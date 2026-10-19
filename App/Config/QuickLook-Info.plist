@@ -40,6 +40,13 @@
 				<string>org.7-zip.7-zip-archive</string>
 				<string>com.rarlab.rar-archive</string>
 				<string>com.microsoft.cab</string>
+				<string>com.marcovisona.arca.cbz</string>
+				<string>com.marcovisona.arca.cbr</string>
+				<string>com.marcovisona.arca.cb7</string>
+				<string>com.redhat.rpm-archive</string>
+				<string>org.debian.deb-archive</string>
+				<string>com.microsoft.wim-archive</string>
+				<string>com.microsoft.windows-installer</string>
 			</array>
 			<key>QLSupportsSearchableItems</key>
 			<false/>

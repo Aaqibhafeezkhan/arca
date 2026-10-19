@@ -50,8 +50,8 @@ struct NewArchiveView: View {
 
                 Section {
                     Toggle("Encrypt with AES-256", isOn: $encrypt)
-                        .disabled(format != .zip)
-                    if encrypt, format == .zip {
+                        .disabled(!format.supportsEncryption)
+                    if encrypt, format.supportsEncryption {
                         SecureField("Password", text: $password)
                         SecureField("Verify", text: $confirmation)
                         if !confirmation.isEmpty, password != confirmation {
@@ -59,9 +59,7 @@ struct NewArchiveView: View {
                         }
                     }
                 } footer: {
-                    Text(format == .zip
-                         ? "ZIP archives can be edited live: adding, replacing or removing items never recompresses the rest."
-                         : "\(format.displayName) archives are rewritten in a single streaming pass when you apply changes.")
+                    Text(footer)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -117,18 +115,33 @@ struct NewArchiveView: View {
             format = settings.defaultFormat
             level = Double(settings.compressionLevel)
         }
-        .onChange(of: format) { _, f in if f != .zip { encrypt = false } }
+        .onChange(of: format) { _, f in if !f.supportsEncryption { encrypt = false } }
     }
 
     private func label(for format: ArchiveFormat) -> String {
         switch format {
         case .zip: "ZIP — universal, live editing"
+        case .sevenZip: "7Z — best compression"
+        case .rar: "RAR — via your installed rar"
         case .tarGzip: "TAR.GZ — Unix standard"
         case .tarXz: "TAR.XZ — smallest"
         case .tarZstd: "TAR.ZST — fast & small"
         case .tarBzip2: "TAR.BZ2"
         case .tar: "TAR — uncompressed"
         default: format.displayName
+        }
+    }
+
+    private var footer: String {
+        switch format {
+        case .zip:
+            "ZIP archives can be edited live: adding, replacing or removing items never recompresses the rest."
+        case .sevenZip:
+            "7z gives the smallest archives. With encryption, file names are hidden too. Edits recompress only the blocks they touch."
+        case .rar:
+            "Created with RARLAB's rar. With encryption, file names are hidden too. RAR can't be empty: add some files."
+        default:
+            "\(format.displayName) archives are rewritten in a single streaming pass when you apply changes."
         }
     }
 
@@ -142,7 +155,7 @@ struct NewArchiveView: View {
     }
 
     private var canCreate: Bool {
-        !encrypt || (!password.isEmpty && password == confirmation)
+        (!encrypt || (!password.isEmpty && password == confirmation)) && !(format == .rar && model.sources.isEmpty)
     }
 
     private func chooseSources() {

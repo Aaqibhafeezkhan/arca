@@ -157,7 +157,7 @@ final class ArchiveDocument {
 
     var editingMode: EditingMode { snapshot?.editingMode ?? .readOnly }
     var canEdit: Bool { editingMode.isEditable && activity == nil }
-    var supportsEncryption: Bool { snapshot?.format == .zip }
+    var supportsEncryption: Bool { (snapshot?.format.supportsEncryption ?? false) && editingMode.isEditable }
 
     // MARK: - Browser data
 
@@ -225,8 +225,14 @@ final class ArchiveDocument {
         if paths.count == 1, node.isDirectory {
             navigate(to: first)
         } else {
-            paths.compactMap { tree.node($0) }.filter { !$0.isDirectory }.forEach { openExternally($0.path) }
+            for node in paths.compactMap({ tree.node($0) }) where !node.isDirectory {
+                if Self.isNestedArchive(node.path) { openInArca(node.path) } else { openExternally(node.path) }
+            }
         }
+    }
+
+    static func isNestedArchive(_ path: String) -> Bool {
+        ArchiveFormat.guess(fromFilename: ArchivePath.lastComponent(path)) != nil
     }
 
     // MARK: - Operations
@@ -435,6 +441,21 @@ final class ArchiveDocument {
             } else {
                 NSWorkspace.shared.open(file)
             }
+        }
+    }
+
+    /// Opens an archive stored inside this one in its own window. The copy is
+    /// watched like any opened item, so edits made there flow back here.
+    func openInArca(_ path: String) {
+        guard statuses[path] != .added else {
+            alert = AlertMessage(title: "Not saved yet", message: "Apply pending changes before opening newly added items.")
+            return
+        }
+        perform("Opening", cancellable: false) { [self] _ in
+            guard let archive else { return }
+            let file = try await archive.extractForEditing(path, in: sessions.directory)
+            if editingMode.isEditable { sessions.begin(entryPath: path, fileURL: file) }
+            WindowRouter.shared.open([file])
         }
     }
 

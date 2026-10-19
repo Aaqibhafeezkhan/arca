@@ -5,6 +5,7 @@ public enum ArchiveFormat: String, Sendable, CaseIterable, Codable {
     case tar, tarGzip, tarBzip2, tarXz, tarZstd, tarLz4, tarLzma, tarLzip, tarCompress
     case sevenZip, rar, rar5, iso9660, cab, xar, cpio, lha, ar, warc, mtree
     case gzip, bzip2, xz, zstd, lz4
+    case rpm, dmg, wim, vhd, msi, squashfs, chm, arj, udf
     case other
 
     public var displayName: String {
@@ -35,6 +36,15 @@ public enum ArchiveFormat: String, Sendable, CaseIterable, Codable {
         case .xz: "XZ"
         case .zstd: "Zstandard"
         case .lz4: "LZ4"
+        case .rpm: "RPM"
+        case .dmg: "Disk Image"
+        case .wim: "WIM"
+        case .vhd: "Virtual Disk"
+        case .msi: "Windows Installer"
+        case .squashfs: "SquashFS"
+        case .chm: "CHM"
+        case .arj: "ARJ"
+        case .udf: "UDF"
         case .other: "Archive"
         }
     }
@@ -66,12 +76,57 @@ public enum ArchiveFormat: String, Sendable, CaseIterable, Codable {
         case .xz: "xz"
         case .zstd: "zst"
         case .lz4: "lz4"
+        case .rpm: "rpm"
+        case .dmg: "dmg"
+        case .wim: "wim"
+        case .vhd: "vhdx"
+        case .msi: "msi"
+        case .squashfs: "squashfs"
+        case .chm: "chm"
+        case .arj: "arj"
+        case .udf: "udf"
         case .other: "bin"
         }
     }
 
-    /// Formats the app can create from scratch.
-    public static let creatable: [ArchiveFormat] = [.zip, .tarGzip, .tarXz, .tarZstd, .tarBzip2, .tar]
+    /// Formats the app can create from scratch. 7z needs 7-Zip and RAR the
+    /// RARLAB `rar` tool (see `ExternalTools`).
+    public static var creatable: [ArchiveFormat] {
+        var formats: [ArchiveFormat] = [.zip]
+        if ExternalTools.sevenZip != nil { formats.append(.sevenZip) }
+        formats += [.tarGzip, .tarXz, .tarZstd, .tarBzip2, .tar]
+        if ExternalTools.rar != nil { formats.append(.rar) }
+        return formats
+    }
+
+    /// Formats whose writer can encrypt (AES-256).
+    public var supportsEncryption: Bool {
+        switch self {
+        case .zip, .sevenZip, .rar, .rar5: true
+        default: false
+        }
+    }
+
+    /// Formats handled by 7-Zip rather than libarchive.
+    var prefersSevenZip: Bool {
+        switch self {
+        case .sevenZip, .rar, .rar5, .wim, .vhd, .msi, .squashfs, .chm, .arj, .udf: true
+        default: false
+        }
+    }
+
+    /// Human label for container files that are archives in disguise.
+    public static func documentKind(forFilename name: String) -> String? {
+        let ext = (name as NSString).pathExtension.lowercased()
+        return [
+            "cbz": "Comic Book (ZIP)", "cbr": "Comic Book (RAR)", "cb7": "Comic Book (7-Zip)", "cbt": "Comic Book (TAR)",
+            "jar": "Java Archive", "apk": "Android Package", "aab": "Android App Bundle", "ipa": "iOS App",
+            "appx": "Windows App Package", "msix": "Windows App Package", "epub": "EPUB Book",
+            "docx": "Word Document", "xlsx": "Excel Workbook", "pptx": "PowerPoint Presentation",
+            "odt": "OpenDocument Text", "ods": "OpenDocument Spreadsheet", "deb": "Debian Package",
+            "pkg": "Installer Package", "xip": "Signed Xcode Archive", "vsix": "VS Code Extension",
+        ][ext]
+    }
 
     public var isTarFamily: Bool {
         switch self {
@@ -88,9 +143,14 @@ public enum ArchiveFormat: String, Sendable, CaseIterable, Codable {
             (".tar.xz", .tarXz), (".txz", .tarXz), (".tar.zst", .tarZstd), (".tzst", .tarZstd), (".tar.lz4", .tarLz4),
             (".tar.lzma", .tarLzma), (".tar.lz", .tarLzip), (".tar.z", .tarCompress), (".tar", .tar),
             (".zip", .zip), (".jar", .zip), (".apk", .zip), (".ipa", .zip), (".docx", .zip), (".xlsx", .zip),
-            (".pptx", .zip), (".odt", .zip), (".epub", .zip), (".7z", .sevenZip), (".rar", .rar), (".iso", .iso9660),
-            (".cab", .cab), (".xar", .xar), (".pkg", .xar), (".cpio", .cpio), (".lzh", .lha), (".lha", .lha),
-            (".deb", .ar), (".gz", .gzip), (".bz2", .bzip2), (".xz", .xz), (".zst", .zstd), (".lz4", .lz4),
+            (".pptx", .zip), (".odt", .zip), (".ods", .zip), (".epub", .zip), (".cbz", .zip), (".aab", .zip),
+            (".appx", .zip), (".msix", .zip), (".appxbundle", .zip), (".msixbundle", .zip), (".vsix", .zip),
+            (".7z", .sevenZip), (".cb7", .sevenZip), (".rar", .rar), (".cbr", .rar), (".cbt", .tar),
+            (".iso", .iso9660), (".cab", .cab), (".xar", .xar), (".pkg", .xar), (".xip", .xar), (".cpio", .cpio),
+            (".lzh", .lha), (".lha", .lha), (".deb", .ar), (".rpm", .rpm), (".dmg", .dmg), (".wim", .wim),
+            (".swm", .wim), (".esd", .wim), (".vhd", .vhd), (".vhdx", .vhd), (".msi", .msi), (".squashfs", .squashfs),
+            (".sqsh", .squashfs), (".sfs", .squashfs), (".chm", .chm), (".arj", .arj), (".udf", .udf),
+            (".gz", .gzip), (".bz2", .bzip2), (".xz", .xz), (".zst", .zstd), (".lz4", .lz4),
         ]
         return table.first { lower.hasSuffix($0.0) }?.1
     }

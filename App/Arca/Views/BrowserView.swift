@@ -192,6 +192,9 @@ struct BrowserContextMenu: View {
                 Button("Open") { document.navigate(to: single.path) }
             } else {
                 Button("Open") { document.activate(selection) }
+                if let single, ArchiveDocument.isNestedArchive(single.path) {
+                    Button("Open with Default App") { document.openExternally(single.path) }
+                }
                 if let single {
                     Menu("Open With") {
                         ForEach(document.applications(for: single.path), id: \.self) { app in

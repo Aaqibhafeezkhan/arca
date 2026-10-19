@@ -43,6 +43,24 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         COMBINE_HIDPI_IMAGES: YES
+        # The 7-Zip embed script downloads (once) and writes into the bundle.
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+    postBuildScripts:
+      - name: Embed 7-Zip
+        basedOnDependencyAnalysis: false
+        script: |
+          set -eu
+          "$SRCROOT/Scripts/fetch-7zz.sh" "$SRCROOT/Vendor"
+          BIN="$TARGET_BUILD_DIR/$EXECUTABLE_FOLDER_PATH/7zz"
+          RES="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
+          cp "$SRCROOT/Vendor/7zz" "$BIN"
+          mkdir -p "$RES"
+          cp "$SRCROOT/Vendor/7-Zip License.txt" "$RES/"
+          if [ "${CODE_SIGNING_ALLOWED:-YES}" = "YES" ] && [ -n "${EXPANDED_CODE_SIGN_IDENTITY:-}" ]; then
+            TS="--timestamp=none"
+            [ "$CONFIGURATION" = "Release" ] && [ "$EXPANDED_CODE_SIGN_IDENTITY" != "-" ] && TS="--timestamp"
+            codesign --force --sign "$EXPANDED_CODE_SIGN_IDENTITY" --options runtime $TS "$BIN"
+          fi
 
   ArcaQuickLook:
     type: app-extension

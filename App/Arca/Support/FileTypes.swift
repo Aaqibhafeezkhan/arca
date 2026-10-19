@@ -9,7 +9,9 @@ enum ArchiveTypes {
                            "com.rarlab.rar-archive", "org.tukaani.xz-archive", "com.facebook.zstd-archive",
                            "public.iso-image", "com.apple.xar-archive", "public.cpio-archive", "com.microsoft.cab"]
         types += identifiers.compactMap { UTType($0) }
-        types += ["7z", "rar", "xz", "txz", "zst", "tzst", "lz4", "lzh", "cab", "iso", "jar", "apk", "ipa", "epub"]
+        types += ["7z", "rar", "xz", "txz", "zst", "tzst", "lz4", "lzh", "cab", "iso", "jar", "apk", "ipa", "epub",
+                  "cbz", "cbr", "cb7", "cbt", "rpm", "deb", "pkg", "xip", "dmg", "wim", "swm", "esd", "vhd", "vhdx",
+                  "msi", "squashfs", "sqsh", "chm", "arj", "appx", "msix", "aab", "vsix"]
             .compactMap { UTType(filenameExtension: $0) }
         return types
     }()

@@ -20,6 +20,7 @@ public enum ArchiveError: Error, Sendable, Equatable, LocalizedError {
     case modifiedExternally
     case cancelled
     case libarchive(String)
+    case toolFailed(String)
 
     public var errorDescription: String? {
         switch self {
@@ -49,7 +50,7 @@ public enum ArchiveError: Error, Sendable, Equatable, LocalizedError {
             return "The archive was modified by another application. Reopen it to continue."
         case .cancelled:
             return "The operation was cancelled."
-        case let .libarchive(message):
+        case let .libarchive(message), let .toolFailed(message):
             return message
         }
     }

@@ -36,6 +36,7 @@ private enum LA {
     static let lzip: Int32 = 9
     static let lz4: Int32 = 13
     static let zstd: Int32 = 14
+    static let rpm: Int32 = 8
 
     static let typeMask: UInt32 = 0o170000
     static let regular: UInt32 = 0o100000
@@ -209,6 +210,7 @@ final class LibArchiveBackend: ArchiveBackend {
 
     private func resolveFormat() -> ArchiveFormat {
         let base = formatCode & LA.baseMask
+        if filterCodes.contains(LA.rpm) { return .rpm }
         let filter = filterCodes.first
         if base == LA.tar || (base == LA.empty && ArchiveFormat.guess(fromFilename: path)?.isTarFamily == true) {
             switch filter {

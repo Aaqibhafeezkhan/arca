@@ -4,11 +4,17 @@ Native macOS archive manager (SwiftUI, macOS 14+). Browse an archive like a fold
 
 | | Browse / Preview / Extract | Editing | Encryption |
 |---|---|---|---|
-| ZIP, JAR, APK, IPA, DOCX… | ✓ | **Live, in-place** — only new data is written | AES-256 read/write, ZipCrypto read |
-| TAR | ✓ | Streaming rewrite (byte copy, no compression) | — |
+| ZIP, JAR, APK, IPA, DOCX, EPUB, CBZ, APPX/MSIX… | ✓ | **Live, in-place** — only new data is written | AES-256 read/write, ZipCrypto read |
+| 7z, CB7 | ✓ | Untouched blocks copied, only touched blocks recompressed (7-Zip) | AES-256 + encrypted file names |
+| RAR 4/5, CBR | ✓ incl. encrypted RAR5 and multi-volume | With `rar` installed: untouched items copied as-is | AES-256 + encrypted file names (`rar`) |
+| TAR, CBT | ✓ | Streaming rewrite (byte copy, no compression) | — |
 | TAR.GZ / .BZ2 / .XZ / .ZST / .LZ4 | ✓ | Streaming rewrite (outer compression redone, no extraction to disk) | — |
-| 7z, RAR/RAR5, ISO, CAB, XAR/PKG, CPIO, LHA, AR/DEB | ✓ | Read-only | 7z/RAR/ZIP passwords on read |
+| DMG | ✓ mounted read-only and invisibly (`hdiutil`, also APFS/encrypted) | Read-only | Password |
+| ISO, UDF, WIM, VHD/VHDX, MSI, SquashFS, CHM, ARJ, CAB | ✓ | Read-only | — |
+| XAR/PKG/XIP, CPIO, RPM, DEB/AR, LHA | ✓ | Read-only | — |
 | .gz / .bz2 / .xz / .zst (single file) | ✓ | Read-only | — |
+
+Archives nested in archives (e.g. `data.tar.xz` inside a `.deb`) open in a new window with double-click; if you edit them, the changes flow back into the parent archive.
 
 ## Why it's fast: how editing works
 
@@ -28,6 +34,15 @@ Untouched entries are **never read or rewritten**: adding a 1 KB file to a 10 GB
 ### TAR family: streaming rewrite
 
 `tar.gz/xz/zst` is a single compressed stream, so changing one entry means re-streaming the archive. libarchive reads the source and writes a temp file next to it, copying unchanged entries' data block by block without touching disk with extracted files, then does an atomic `rename(2)`. In the UI, changes are **staged** (shown in the browser with Added / Modified / Renamed badges) and applied in a single pass with ⌘S.
+
+### 7z and RAR: external engines, atomic batches
+
+7z and RAR go through the tools of their authors, which know them better than any reimplementation:
+
+- **7-Zip** (`7zz`, LGPL) is **bundled in the app** (`Contents/MacOS/7zz`, universal arm64/x86_64). It's downloaded at build time by `App/Scripts/fetch-7zz.sh` (pinned version + SHA-256), signed together with the app, and ships with its license in `Contents/Resources`. It also handles reading RAR (encrypted RAR5 and multi-volume included), WIM, VHD, MSI, SquashFS, CHM, ARJ, UDF.
+- **RAR** writing is reserved to RARLAB's tool, which can't be redistributed. If `rar` is installed (`brew install --cask rar`), RAR archives become editable and can be created; otherwise they're read-only.
+
+Format detection goes by content (magic bytes), so a `.cbz` that is really a 7z opens correctly. Changes are batched (consecutive additions → one `a`, deletions → one `d`, renames → one `rn`) and applied to an **APFS clone** of the archive, which replaces the original atomically only if the whole batch succeeds. Cancellation kills the process and leaves the original intact. Both 7-Zip and RAR copy the compressed data of untouched files; in solid archives only the blocks containing modified files are recompressed.
 
 ### Live editing in external apps
 
@@ -100,7 +115,8 @@ swift run arca compact archive.zip
 
 ## Known limitations
 
-- RAR and 7z are read-only (RAR writing is proprietary; 7z writing via libarchive isn't reliable enough for in-place editing).
-- ZIP: Deflate64/PPMd entries can't be extracted (libarchive fallback for bzip2/lzma/xz/zstd). Multi-volume archives aren't supported.
+- RAR editing requires `rar` (RARLAB, shareware) installed by the user; it can't be bundled.
+- DMG, WIM, VHD, MSI, ISO and the other image/installer formats are read-only.
+- ZIP: entries with methods other than Store/Deflate (Deflate64, PPMd, LZMA, zstd…) are extracted via 7-Zip. Multi-volume ZIPs aren't supported.
 - The system libarchive may lack some codecs depending on the macOS version (e.g. writing zstd/lz4): the app reports the error when the change is applied. If needed, link a static libarchive build in place of the system one.
 - Staged changes on tar.* that haven't been applied are lost when the window closes.

@@ -25,7 +25,7 @@ final class ZipArchive: ArchiveBackend {
     private var identity: FileIdentity
     private var reader: RandomAccessFile
     private var dataStartCache: [UInt64: UInt64] = [:]
-    private var fallback: LibArchiveBackend?
+    private var fallback: ArchiveBackend?
 
     var passwords: [String] = [] { didSet { fallback?.passwords = passwords } }
     /// Test hook: throws at named commit stages to simulate crashes.
@@ -346,7 +346,13 @@ final class ZipArchive: ArchiveBackend {
 
     private func extractWithFallback(_ record: ZipRecord, into sink: DataSink) throws {
         if fallback == nil {
-            fallback = try LibArchiveBackend(path: path, passwords: passwords, forceReadOnly: true)
+            // 7-Zip handles every ZIP method (Deflate64, PPMd, LZMA, …);
+            // libarchive covers bzip2/lzma/xz/zstd when it isn't available.
+            if let tool = ExternalTools.sevenZip {
+                fallback = try SevenZipBackend(path: path, passwords: passwords, tool: tool)
+            } else {
+                fallback = try LibArchiveBackend(path: path, passwords: passwords, forceReadOnly: true)
+            }
         }
         var found = false
         try fallback!.extract(where: { $0.path == record.path }, open: { _ in

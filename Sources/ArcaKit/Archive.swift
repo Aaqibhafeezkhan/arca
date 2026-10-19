@@ -36,10 +36,13 @@ public final class Archive: @unchecked Sendable {
 
     static func makeBackend(url: URL, passwords: [String], journal: JournalStore) throws -> ArchiveBackend {
         let path = url.path
-        let head = try RandomAccessFile(path: path, writable: false).read(at: 0, count: 4)
-        let looksLikeZip = head.count == 4 && head[0] == 0x50 && head[1] == 0x4B &&
-            [0x03, 0x05, 0x07].contains(head[2])
-        if looksLikeZip || ArchiveFormat.guess(fromFilename: url.lastPathComponent) == .zip {
+        let file = try RandomAccessFile(path: path, writable: false)
+        let head = try file.read(at: 0, count: 8)
+        let guess = ArchiveFormat.guess(fromFilename: url.lastPathComponent)
+        let sevenZip = ExternalTools.sevenZip
+
+        let looksLikeZip = head.count >= 4 && head[0] == 0x50 && head[1] == 0x4B && [0x03, 0x05, 0x07].contains(head[2])
+        if looksLikeZip || (guess == .zip && !Self.hasSignature(head, of: .sevenZip) && !Self.hasSignature(head, of: .rar)) {
             do {
                 let zip = try ZipArchive(path: path, journal: journal)
                 zip.passwords = passwords
@@ -51,7 +54,49 @@ public final class Archive: @unchecked Sendable {
                 return try LibArchiveBackend(path: path, passwords: passwords, forceReadOnly: true)
             }
         }
-        return try LibArchiveBackend(path: path, passwords: passwords)
+
+        #if os(macOS)
+        if guess == .dmg || Self.isDiskImage(file) {
+            return try DiskImageBackend(path: path, passwords: passwords)
+        }
+        #endif
+
+        // 7z / RAR (by content, so .cbr/.cb7 and misnamed files work) and the
+        // formats only 7-Zip reads.
+        if let sevenZip, Self.hasSignature(head, of: .sevenZip) || Self.hasSignature(head, of: .rar)
+            || guess?.prefersSevenZip == true || guess == .dmg {
+            do {
+                return try SevenZipBackend(path: path, passwords: passwords, tool: sevenZip)
+            } catch let error as ArchiveError where error.isPasswordError {
+                throw error
+            } catch {
+                // 7-Zip couldn't run here (e.g. sandboxed Quick Look): libarchive
+                // still reads most 7z/RAR archives. Report 7-Zip's error if it can't.
+                do { return try LibArchiveBackend(path: path, passwords: passwords) } catch _ { throw error }
+            }
+        }
+
+        do {
+            return try LibArchiveBackend(path: path, passwords: passwords)
+        } catch ArchiveError.notAnArchive(_) where sevenZip != nil {
+            // 7-Zip knows ~50 more formats; let it have a go.
+            return try SevenZipBackend(path: path, passwords: passwords, tool: sevenZip!)
+        }
+    }
+
+    static func hasSignature(_ head: [UInt8], of format: ArchiveFormat) -> Bool {
+        switch format {
+        case .sevenZip: head.starts(with: [0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C])
+        case .rar: head.starts(with: [0x52, 0x61, 0x72, 0x21, 0x1A, 0x07])
+        default: false
+        }
+    }
+
+    /// UDIF images end with a 512-byte "koly" trailer.
+    static func isDiskImage(_ file: RandomAccessFile) -> Bool {
+        guard let size = try? file.size(), size >= 512,
+              let trailer = try? file.read(at: size - 512, count: 4) else { return false }
+        return trailer == Array("koly".utf8)
     }
 
     /// Creates a new, empty archive.
@@ -61,6 +106,12 @@ public final class Archive: @unchecked Sendable {
             let backend: ArchiveBackend
             if format == .zip {
                 backend = try ZipArchive.create(path: url.path, journal: journal)
+            } else if format == .sevenZip {
+                guard let tool = ExternalTools.sevenZip else { throw ArchiveError.unsupported("creating 7z archives (7-Zip not found)") }
+                try SevenZipBackend.createEmpty7z(at: url.path)
+                backend = try SevenZipBackend(path: url.path, passwords: [], tool: tool)
+            } else if format == .rar || format == .rar5 {
+                throw ArchiveError.unsupported("empty RAR archives — create one from files instead")
             } else {
                 try LibArchiveBackend.createEmpty(path: url.path, format: format)
                 backend = try LibArchiveBackend(path: url.path)
@@ -165,6 +216,15 @@ extension Archive {
     /// One-shot creation from files on disk (Finder service, drag to dock).
     public static func compress(_ sources: [URL], into url: URL, format: ArchiveFormat,
                                 options: WriteOptions = .default, progress: ProgressReporter? = nil) async throws -> Archive {
+        if format == .rar || format == .rar5 {
+            let queue = DispatchQueue(label: "arca.create.rar")
+            try await run(on: queue) {
+                try SevenZipBackend.createRAR(at: url.path, from: sources, options: options, progress: progress)
+            }
+            var passwords: [String] = []
+            if case let .aes256(pw) = options.encryption { passwords.append(pw) }
+            return try await open(url, passwords: passwords)
+        }
         let archive = try await create(url, format: format)
         let changes = sources.map { ArchiveChange.add(source: $0, at: $0.lastPathComponent) }
         _ = try await archive.apply(changes, options: options, progress: progress)

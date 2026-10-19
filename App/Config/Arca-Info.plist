@@ -25,6 +25,11 @@
 				<string>public.bzip2-archive</string>
 				<string>org.tukaani.xz-archive</string>
 				<string>com.facebook.zstd-archive</string>
+				<string>org.7-zip.7-zip-archive</string>
+				<string>com.rarlab.rar-archive</string>
+				<string>com.marcovisona.arca.cbz</string>
+				<string>com.marcovisona.arca.cb7</string>
+				<string>com.marcovisona.arca.cbt</string>
 			</array>
 		</dict>
 		<dict>
@@ -36,13 +41,23 @@
 			<string>Alternate</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>org.7-zip.7-zip-archive</string>
-				<string>com.rarlab.rar-archive</string>
 				<string>public.iso-image</string>
 				<string>com.apple.xar-archive</string>
 				<string>public.cpio-archive</string>
 				<string>com.microsoft.cab</string>
 				<string>public.archive</string>
+				<string>com.marcovisona.arca.cbr</string>
+				<string>com.apple.disk-image-udif</string>
+				<string>com.redhat.rpm-archive</string>
+				<string>org.debian.deb-archive</string>
+				<string>com.apple.installer-package-archive</string>
+				<string>com.apple.xip-archive</string>
+				<string>com.microsoft.wim-archive</string>
+				<string>com.microsoft.vhd-image</string>
+				<string>com.microsoft.windows-installer</string>
+				<string>org.squashfs.squashfs-image</string>
+				<string>com.microsoft.chm-archive</string>
+				<string>com.arj.arj-archive</string>
 			</array>
 		</dict>
 	</array>
@@ -197,6 +212,228 @@
 				<key>public.filename-extension</key>
 				<array>
 					<string>cab</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.zip-archive</string>
+				<string>public.archive</string>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Comic Book Archive (ZIP)</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.marcovisona.arca.cbz</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>cbz</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.archive</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Comic Book Archive (RAR)</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.marcovisona.arca.cbr</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>cbr</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.archive</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Comic Book Archive (7-Zip)</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.marcovisona.arca.cb7</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>cb7</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.archive</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Comic Book Archive (TAR)</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.marcovisona.arca.cbt</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>cbt</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.archive</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>RPM Package</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.redhat.rpm-archive</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>rpm</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.archive</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Debian Package</string>
+			<key>UTTypeIdentifier</key>
+			<string>org.debian.deb-archive</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>deb</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.archive</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Windows Imaging Format</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.microsoft.wim-archive</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>wim</string>
+					<string>swm</string>
+					<string>esd</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.archive</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Virtual Hard Disk</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.microsoft.vhd-image</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>vhd</string>
+					<string>vhdx</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.archive</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Windows Installer Package</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.microsoft.windows-installer</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>msi</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.archive</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>SquashFS Image</string>
+			<key>UTTypeIdentifier</key>
+			<string>org.squashfs.squashfs-image</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>squashfs</string>
+					<string>sqsh</string>
+					<string>sfs</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.archive</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Compiled HTML Help</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.microsoft.chm-archive</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>chm</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.archive</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>ARJ Archive</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.arj.arj-archive</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>arj</string>
 				</array>
 			</dict>
 		</dict>
