@@ -42,32 +42,42 @@ PHOTO="$(cd "$KIT" && ls Photos | head -1)"
 # --- Capture -----------------------------------------------------------------
 cat > "$WORK/windowid.swift" <<'SWIFT'
 import CoreGraphics
+import Foundation
 let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] ?? []
 let arca = windows.filter { $0[kCGWindowOwnerName as String] as? String == "Arca" && $0[kCGWindowLayer as String] as? Int == 0 }
 func area(_ w: [String: Any]) -> Double {
     let b = w[kCGWindowBounds as String] as? [String: Double] ?? [:]
     return (b["Width"] ?? 0) * (b["Height"] ?? 0)
 }
-if let window = arca.max(by: { area($0) < area($1) }), let id = window[kCGWindowNumber as String] as? Int { print(id) }
+for w in arca {
+    let b = w[kCGWindowBounds as String] as? [String: Double] ?? [:]
+    FileHandle.standardError.write("window \(w[kCGWindowNumber as String] ?? "?") “\(w[kCGWindowName as String] ?? "")” \(Int(b["Width"] ?? 0))×\(Int(b["Height"] ?? 0))\n".data(using: .utf8)!)
+}
+// With an archive open, prefer its window over a leftover welcome window (titled "Arca").
+let preferArchive = CommandLine.arguments.count > 1
+func score(_ w: [String: Any]) -> Double {
+    area(w) + (preferArchive && w[kCGWindowName as String] as? String != "Arca" ? 1e9 : 0)
+}
+if let window = arca.max(by: { score($0) < score($1) }), let id = window[kCGWindowNumber as String] as? Int { print(id) }
 SWIFT
 swiftc -O "$WORK/windowid.swift" -o "$WORK/windowid"
 
 shoot() {  # name appearance [archive reveal-path]
   local name=$1 appearance=$2 file=${3:-} reveal=${4:-}
-  pkill -x Arca || true
-  sleep 1
-  local args=(-ApplePersistenceIgnoreState YES -AppleInterfaceStyle "$appearance")
+  osascript -e 'tell application id "com.marcovisona.Arca" to quit' 2>/dev/null || pkill -x Arca || true
+  sleep 2
+  local args=(-ApplePersistenceIgnoreState YES -ArcaAppearance "$appearance")
   [ -n "$reveal" ] && args+=(-ArcaReveal "$reveal")
   if [ -n "$file" ]; then open -F -a "$APP" "$file" --args "${args[@]}"; else open -F -a "$APP" --args "${args[@]}"; fi
   sleep 8
   open -a "$APP"   # bring to front so the window draws as active
   sleep 2
-  local id; id="$("$WORK/windowid")"
+  local id; id="$("$WORK/windowid" ${file:+archive})"
   [ -n "$id" ] || { echo "no Arca window for $name" >&2; return 1; }
   screencapture -x -l "$id" "$OUT/$name.png"
   echo "→ $OUT/$name.png"
 }
 
-shoot browser Light "$WORK/Brand Kit.zip" "Photos/$PHOTO"
-shoot browser-dark Dark "$WORK/arca-source.7z" "Sources/ArcaKit/Archive.swift"
-shoot welcome Light   # recents now list the two archives above
+shoot browser light "$WORK/Brand Kit.zip" "Photos/$PHOTO"
+shoot browser-dark dark "$WORK/arca-source.7z" "Sources/ArcaKit/Archive.swift"
+shoot welcome light   # recents now list the two archives above

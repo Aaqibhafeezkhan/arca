@@ -9,6 +9,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.servicesProvider = services
         NSUpdateDynamicServices()
         EditSessionManager.purgeStaleSessions()
+        // Launch argument used by App/Scripts/screenshots.sh: `-ArcaAppearance dark|light`.
+        switch UserDefaults.standard.string(forKey: "ArcaAppearance") {
+        case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
+        case "light": NSApp.appearance = NSAppearance(named: .aqua)
+        default: break
+        }
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
@@ -31,7 +37,9 @@ final class WindowRouter {
 
     func register(_ action: OpenWindowAction) {
         openWindow = action
-        flush()
+        // Deferred so the window's welcome view registers as adopter first:
+        // an archive opened at launch then reuses that window instead of adding one.
+        DispatchQueue.main.async { self.flush() }
     }
 
     func addAdopter(_ id: UUID, _ adopt: @escaping (URL) -> Void) {
