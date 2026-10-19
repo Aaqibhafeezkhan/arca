@@ -58,7 +58,7 @@ struct BrowserView: View {
                 Text(row.hasDate ? row.modified.formatted(date: .abbreviated, time: .shortened) : "—")
                     .foregroundStyle(.secondary)
             }
-            .width(min: 120, ideal: 160)
+            .width(min: 120, ideal: 190)
 
             TableColumn("Size", value: \.size) { row in
                 Text(row.isDirectory ? "\(row.itemCount) item\(row.itemCount == 1 ? "" : "s")" : row.size.formattedSize)

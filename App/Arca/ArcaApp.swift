@@ -11,7 +11,7 @@ struct ArcaApp: App {
             RootView(url: $url)
                 .environment(settings)
         }
-        .defaultSize(width: 1100, height: 700)
+        .defaultSize(width: 1280, height: 780)
         .windowToolbarStyle(.unified)
         .commands { ArcaCommands() }
 
