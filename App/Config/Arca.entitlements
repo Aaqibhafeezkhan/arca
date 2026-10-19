@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Developer ID distribution: no App Sandbox (Services and in-place
+	     editing of arbitrary archives need unrestricted file access).
+	     Hardened Runtime is enabled in the build settings for notarization. -->
+</dict>
+</plist>

@@ -1,0 +1,72 @@
+# Generate the Xcode project with:  brew install xcodegen && xcodegen
+name: Arca
+options:
+  bundleIdPrefix: com.marcovisona
+  deploymentTarget:
+    macOS: "14.0"
+  developmentLanguage: en
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    MARKETING_VERSION: 1.0.0
+    CURRENT_PROJECT_VERSION: 1
+    SWIFT_VERSION: 5.0
+    SWIFT_STRICT_CONCURRENCY: minimal
+    ENABLE_HARDENED_RUNTIME: YES
+    DEAD_CODE_STRIPPING: YES
+    CODE_SIGN_STYLE: Automatic
+    # Set your team ID (or override in Xcode) for signing and notarization.
+    DEVELOPMENT_TEAM: ""
+
+packages:
+  ArcaKit:
+    path: ..
+
+targets:
+  Arca:
+    type: application
+    platform: macOS
+    sources:
+      - path: Arca
+    dependencies:
+      - package: ArcaKit
+        product: ArcaKit
+      - target: ArcaQuickLook
+    settings:
+      base:
+        PRODUCT_NAME: Arca
+        PRODUCT_BUNDLE_IDENTIFIER: com.marcovisona.Arca
+        INFOPLIST_FILE: Config/Arca-Info.plist
+        CODE_SIGN_ENTITLEMENTS: Config/Arca.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        COMBINE_HIDPI_IMAGES: YES
+
+  ArcaQuickLook:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: QuickLook
+    dependencies:
+      - package: ArcaKit
+        product: ArcaKit
+      - sdk: Quartz.framework
+    settings:
+      base:
+        PRODUCT_NAME: ArcaQuickLook
+        PRODUCT_BUNDLE_IDENTIFIER: com.marcovisona.Arca.QuickLook
+        INFOPLIST_FILE: Config/QuickLook-Info.plist
+        CODE_SIGN_ENTITLEMENTS: Config/QuickLook.entitlements
+        SKIP_INSTALL: YES
+
+schemes:
+  Arca:
+    build:
+      targets:
+        Arca: all
+    run:
+      config: Debug
+    archive:
+      config: Release
