@@ -13,8 +13,6 @@ struct ArcaApp: App {
         }
         .defaultSize(width: 1100, height: 700)
         .windowToolbarStyle(.unified)
-        // File opens are routed by AppDelegate, not by spawning blank windows.
-        .handlesExternalEvents(matching: [])
         .commands { ArcaCommands() }
 
         Window("New Archive", id: WindowID.newArchive) {

@@ -43,6 +43,7 @@ final class RandomAccessFile {
     /// Fills as much of `buffer` as possible; returns bytes read (short only at EOF).
     @discardableResult
     func read(into buffer: UnsafeMutableRawBufferPointer, at offset: UInt64) throws -> Int {
+        guard offset <= UInt64(Int64.max) - UInt64(buffer.count) else { throw ArchiveError.corrupted("offset out of range") }
         var done = 0
         while done < buffer.count {
             let n = pread(fd, buffer.baseAddress! + done, buffer.count - done, off_t(offset) + off_t(done))

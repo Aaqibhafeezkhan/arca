@@ -21,7 +21,7 @@ struct NewArchiveView: View {
     @State private var confirmation = ""
     @State private var error: String?
     @State private var isWorking = false
-    @State private var progress = ProgressReporter()
+    @State private var progress = ArcaKit.ProgressReporter()
 
     var body: some View {
         VStack(spacing: 0) {

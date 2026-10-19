@@ -7,7 +7,7 @@ import UniformTypeIdentifiers
 struct Activity: Identifiable {
     let id = UUID()
     let title: String
-    let progress: ProgressReporter
+    let progress: ArcaKit.ProgressReporter
     let started = Date()
 }
 
@@ -232,8 +232,8 @@ final class ArchiveDocument {
     // MARK: - Operations
 
     /// Runs async work with progress, cancellation and password retry.
-    func perform(_ title: String, cancellable: Bool = true, _ work: @escaping (ProgressReporter) async throws -> Void) {
-        let reporter = ProgressReporter()
+    func perform(_ title: String, cancellable: Bool = true, _ work: @escaping (ArcaKit.ProgressReporter) async throws -> Void) {
+        let reporter = ArcaKit.ProgressReporter()
         let activity = Activity(title: title, progress: reporter)
         self.activity = activity
         Task { [self] in
@@ -279,7 +279,7 @@ final class ArchiveDocument {
         perform(title) { [self] progress in try await commit(changes, progress: progress) }
     }
 
-    private func commit(_ changes: [ArchiveChange], progress: ProgressReporter) async throws {
+    private func commit(_ changes: [ArchiveChange], progress: ArcaKit.ProgressReporter) async throws {
         guard let archive else { return }
         let options = settings.writeOptions(password: supportsEncryption ? encryptionPassword : nil)
         var updated = try await archive.apply(changes, options: options, progress: progress)

@@ -98,7 +98,7 @@ final class ZipArchive: ArchiveBackend {
         let eocdPhysical = tailStart + UInt64(e)
         var cdEnd = eocdPhysical
         if e >= 20, tail.le32(at: e - 20) == ZipSignature.zip64Locator {
-            var l = ByteReader(tail, offset: e - 16)
+            var l = ByteReader(tail, offset: e - 12)
             let storedOffset = try l.u64()
             let locatorPhysical = eocdPhysical - 20
             for candidate in [storedOffset, locatorPhysical >= 56 ? locatorPhysical - 56 : storedOffset] {
