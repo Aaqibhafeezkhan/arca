@@ -34,6 +34,7 @@ Browse an archive like a folder, open any item in its app and **write the change
 - [Build from source](#build-from-source)
 - [Architecture](#architecture)
 - [Known limitations](#known-limitations)
+- [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -43,7 +44,6 @@ Browse an archive like a folder, open any item in its app and **write the change
 - 🛡️ **Crash-proof commits.** Every ZIP change is journaled before it touches the file. A crash, power loss or cancellation rolls the archive back **byte for byte**, verified by fault-injection tests at every stage.
 - ✍️ **Live editing in any app.** Double-click a file inside the archive, edit it in Preview, Pages, VS Code or Photoshop, hit save: Arca writes it straight back into the archive.
 - 🧰 **The formats that matter, done by the experts.** 7z through the bundled 7-Zip, RAR through RARLAB's own `rar`, everything else through libarchive. Formats are recognized by content, so a `.cbz` that is really a 7z just opens.
-- 🪆 **Archives inside archives.** Double-click `data.tar.xz` inside a `.deb` (or a ZIP inside a 7z): it opens in its own window, and edits flow back into the parent.
 - 💿 **Disk images without mounting clutter.** DMGs, encrypted ones included, are attached read-only and invisibly, then browsed like any archive.
 - 🔐 **Strong encryption.** AES-256 for ZIP (WinZip AE-2), 7z and RAR, with encrypted file names where the format allows it.
 - 🍎 **Truly native.** SwiftUI with Liquid Glass on macOS 26, Quick Look for archives in Finder, Finder Services, drag & drop both ways, no runtime to install.
@@ -200,6 +200,35 @@ App/                     macOS app (XcodeGen): SwiftUI, Quick Look extension, Fi
 - The system libarchive may lack some codecs depending on the macOS version (e.g. writing zstd/lz4): the app reports the error when the change is applied. If needed, link a static libarchive build in place of the system one.
 - Staged changes on tar.* that haven't been applied are lost when the window closes.
 - Preview builds aren't notarized yet.
+
+## Roadmap
+
+Arca is actively evolving. Contributions and
+suggestions are welcome!
+
+### Archive Format Conversion
+
+- Convert archives between supported formats.
+- Preserve directory structure and metadata
+  whenever possible.
+- Choose the destination format and compression level.
+- Provide progress reporting and cancellation.
+
+### Improved Encryption Management
+
+- Encrypt existing unencrypted files in ZIP archives.
+- Apply encryption to an entire archive.
+- Change or remove archive passwords.
+- Clearly identify encrypted and unencrypted entries.
+- Improve handling of archives containing mixed
+  encrypted and unencrypted files.
+
+### Usability and Reliability
+
+- Improve accessibility and VoiceOver support.
+- Expand automated testing.
+- Add reproducible performance benchmarks.
+- Improve handling of unsaved changes.
 
 ## 🤝 Contributing
 
