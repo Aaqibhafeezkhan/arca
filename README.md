@@ -34,6 +34,7 @@ Browse an archive like a folder, open any item in its app and **write the change
 - [Build from source](#build-from-source)
 - [Architecture](#architecture)
 - [Known limitations](#known-limitations)
+- [Contributing](#contributing)
 - [License](#license)
 
 ## Killer features
@@ -199,6 +200,24 @@ App/                     macOS app (XcodeGen): SwiftUI, Quick Look extension, Fi
 - The system libarchive may lack some codecs depending on the macOS version (e.g. writing zstd/lz4): the app reports the error when the change is applied. If needed, link a static libarchive build in place of the system one.
 - Staged changes on tar.* that haven't been applied are lost when the window closes.
 - Preview builds aren't notarized yet.
+
+## 🤝 Contributing
+
+Contributions are welcome!
+
+Arca is an open-source project, and we're looking
+for developers interested in Swift, SwiftUI,
+archive formats, performance, and macOS development.
+
+Whether you want to fix a bug, improve the UI,
+add tests, or suggest a feature, you're welcome.
+
+Check out our
+[good first issues](https://github.com/marcovisona/arca/labels/good%20first%20issue)
+to get started.
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md)
+before submitting a pull request.
 
 ## License
 
