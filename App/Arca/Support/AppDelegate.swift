@@ -34,6 +34,7 @@ final class WindowRouter {
     private var openWindow: OpenWindowAction?
     private var adopters: [(id: UUID, adopt: (URL) -> Void, dismiss: () -> Void)] = []
     private var queue: [URL] = []
+    private var isFlushing = false
     private let launched = Date()
     private var routedAtLaunch = false
 
@@ -66,16 +67,23 @@ final class WindowRouter {
     }
 
     private func flush() {
+        // Opening or adopting a window can synchronously register another scene.
+        // Let the active flush handle any requests added by those callbacks.
+        guard !isFlushing else { return }
+        isFlushing = true
+        defer { isFlushing = false }
+
         var routed = false
         while let url = queue.first {
             if !adopters.isEmpty {
+                queue.removeFirst()
                 adopters.removeFirst().adopt(url)
             } else if let openWindow {
+                queue.removeFirst()
                 openWindow(id: WindowID.archive, value: url)
             } else {
                 return // No scene yet; retried once a window registers.
             }
-            queue.removeFirst()
             routed = true
             NSDocumentController.shared.noteNewRecentDocumentURL(url)
         }
