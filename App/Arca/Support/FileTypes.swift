@@ -41,9 +41,9 @@ enum FileIcons {
     }
 
     static func kind(for path: String, isDirectory: Bool) -> String {
-        if isDirectory { return "Folder" }
+        if isDirectory { return L("Folder") }
         let ext = (path as NSString).pathExtension
-        guard !ext.isEmpty, let type = UTType(filenameExtension: ext) else { return "Document" }
+        guard !ext.isEmpty, let type = UTType(filenameExtension: ext) else { return L("Document") }
         return type.localizedDescription ?? ext.uppercased()
     }
 
@@ -73,16 +73,16 @@ extension EditingMode {
     var badge: (title: String, symbol: String, help: String) {
         switch self {
         case .inPlace:
-            ("Live editing", "bolt.fill",
-             "Changes are written straight into the archive. Untouched items are never recompressed.")
+            (L("Live editing"), "bolt.fill",
+             L("Changes are written straight into the archive. Untouched items are never recompressed."))
         case .streamRewrite(true):
-            ("Saves on apply", "arrow.triangle.2.circlepath",
-             "Changes are collected and applied in one pass. The outer compression is redone; nothing is extracted to disk.")
+            (L("Saves on apply"), "arrow.triangle.2.circlepath",
+             L("Changes are collected and applied in one pass. The outer compression is redone; nothing is extracted to disk."))
         case .streamRewrite(false):
-            ("Saves on apply", "arrow.triangle.2.circlepath",
-             "Changes are collected and applied in one pass, copying untouched items as-is.")
+            (L("Saves on apply"), "arrow.triangle.2.circlepath",
+             L("Changes are collected and applied in one pass, copying untouched items as-is."))
         case .readOnly:
-            ("Read-only", "lock.fill", "This format can be browsed and extracted, but not modified.")
+            (L("Read-only"), "lock.fill", L("This format can be browsed and extracted, but not modified."))
         }
     }
 }

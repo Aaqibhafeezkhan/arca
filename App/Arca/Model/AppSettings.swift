@@ -8,9 +8,9 @@ enum ExtractionDestination: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .ask: "Ask every time"
-        case .nextToArchive: "Next to the archive"
-        case .downloads: "Downloads folder"
+        case .ask: L("Ask every time")
+        case .nextToArchive: L("Next to the archive")
+        case .downloads: L("Downloads folder")
         }
     }
 }

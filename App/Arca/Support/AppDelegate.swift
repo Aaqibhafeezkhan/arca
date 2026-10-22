@@ -100,7 +100,7 @@ final class WindowRouter {
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
         panel.allowedContentTypes = ArchiveTypes.openable
-        panel.prompt = "Open"
+        panel.prompt = L("Open")
         if panel.runModal() == .OK { open(panel.urls) }
     }
 

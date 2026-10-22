@@ -5,7 +5,7 @@ import SwiftUI
 struct ArchiveWindow: View {
     let url: URL
     @State private var document: ArchiveDocument
-    @State private var newFolderName = "untitled folder"
+    @State private var newFolderName = L("untitled folder")
     @State private var renameText = ""
 
     init(url: URL) {
@@ -34,7 +34,7 @@ struct ArchiveWindow: View {
     private var content: some View {
         if let error = document.loadError {
             ContentUnavailableView {
-                Label("Can't Open “\(url.lastPathComponent)”", systemImage: "exclamationmark.triangle")
+                Label(LF("Can't Open “%@”", url.lastPathComponent), systemImage: "exclamationmark.triangle")
             } description: {
                 Text(error)
             } actions: {
@@ -93,7 +93,7 @@ struct ArchiveToolbar: ToolbarContent {
             Button { document.extractWithDestinationChoice(Array(document.selection)) } label: {
                 Label("Extract", systemImage: "arrow.down.doc")
             }
-            .help(document.selection.isEmpty ? "Extract everything (⌥⌘E)" : "Extract selection (⌘E)")
+            .help(document.selection.isEmpty ? L("Extract everything (⌥⌘E)") : L("Extract selection (⌘E)"))
             Button(role: .destructive) { document.requestDelete(document.selection) } label: {
                 Label("Delete", systemImage: "trash")
             }
@@ -152,7 +152,7 @@ private struct DocumentDialogs: ViewModifier {
                 if let target { renameText = ArchivePath.lastComponent(target) }
             }
             .onChange(of: document.isCreatingFolder) { _, creating in
-                if creating { newFolderName = "untitled folder" }
+                if creating { newFolderName = L("untitled folder") }
             }
             .confirmationDialog(deleteTitle, isPresented: Binding(
                 get: { !document.deleteCandidates.isEmpty }, set: { if !$0 { document.deleteCandidates = [] } }
@@ -160,16 +160,16 @@ private struct DocumentDialogs: ViewModifier {
                 Button("Delete", role: .destructive) { document.confirmDelete() }
             } message: {
                 Text(document.editingMode == .inPlace
-                     ? "The items are removed from the archive immediately. You can't undo this action."
-                     : "The items will be removed when you apply your changes.")
+                     ? L("The items are removed from the archive immediately. You can't undo this action.")
+                     : L("The items will be removed when you apply your changes."))
             }
     }
 
     private var deleteTitle: String {
         let n = document.deleteCandidates.count
         if n == 1, let only = document.deleteCandidates.first {
-            return "Delete “\(ArchivePath.lastComponent(only))” from the archive?"
+            return LF("Delete “%@” from the archive?", ArchivePath.lastComponent(only))
         }
-        return "Delete \(n) items from the archive?"
+        return LF("Delete %lld items from the archive?", Int64(n))
     }
 }

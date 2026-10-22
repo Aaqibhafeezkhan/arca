@@ -87,7 +87,7 @@ private struct ArchiveCard: View {
                             .font(.headline)
                             .lineLimit(1)
                             .truncationMode(.middle)
-                        Text("\(snapshot.statistics.fileCount) items · \(snapshot.statistics.totalUncompressed.formattedSize)")
+                        Text(LF("%lld items · %@", Int64(snapshot.statistics.fileCount), snapshot.statistics.totalUncompressed.formattedSize))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .monospacedDigit()
@@ -100,7 +100,7 @@ private struct ArchiveCard: View {
                         : snapshot.editingMode == .readOnly ? .secondary : .orange)
                         .help(mode.help)
                     if snapshot.isEncrypted {
-                        Badge(text: "Encrypted", symbol: "lock.fill", tint: .blue)
+                        Badge(text: L("Encrypted"), symbol: "lock.fill", tint: .blue)
                     }
                 }
             }

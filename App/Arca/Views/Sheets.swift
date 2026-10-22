@@ -75,7 +75,7 @@ struct TextEditorSheet: View {
                 .background(Color(nsColor: .textBackgroundColor))
             Divider()
             HStack {
-                Text("\(state.text.count) characters")
+                Text(LF(state.text.count == 1 ? "%lld character" : "%lld characters", Int64(state.text.count)))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()

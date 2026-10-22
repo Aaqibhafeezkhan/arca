@@ -41,12 +41,12 @@ enum ListingRenderer {
             """
         }
         if entries.count > maxRows {
-            rows += "<tr><td colspan=3 class=dim>… and \(entries.count - maxRows) more items</td></tr>"
+            rows += "<tr><td colspan=3 class=dim>\(escape(format("… and %lld more items", Int64(entries.count - maxRows))))</td></tr>"
         }
         let ratio: String = {
             guard s.totalUncompressed > 0 else { return "" }
             let saved = max(0, 1 - Double(s.archiveSize) / Double(s.totalUncompressed))
-            return " · \(Int((saved * 100).rounded()))% saved"
+            return " · " + format("%d%% saved", Int32((saved * 100).rounded()))
         }()
 
         return """
@@ -64,11 +64,17 @@ enum ListingRenderer {
         .dim { color: var(--dim); }
         </style></head><body>
         <h1>\(escape(snapshot.url.lastPathComponent))</h1>
-        <div class="meta"><span class="pill">\(snapshot.format.displayName)</span>\(snapshot.isEncrypted ? "<span class=pill>Encrypted</span>" : "")\
-        \(s.fileCount) files · \(bytes(s.totalUncompressed)) uncompressed · \(bytes(s.archiveSize)) on disk\(ratio)</div>
+        <div class="meta"><span class="pill">\(snapshot.format.displayName)</span>\(snapshot.isEncrypted ? "<span class=pill>\(escape(localize("Encrypted")))</span>" : "")\
+        \(escape(format("%lld files", Int64(s.fileCount)))) · \(escape(format("%@ uncompressed", bytes(s.totalUncompressed)))) · \(escape(format("%@ on disk", bytes(s.archiveSize))))\(escape(ratio))</div>
         <table>\(rows)</table>
         </body></html>
         """
+    }
+
+    private static func localize(_ key: String) -> String { NSLocalizedString(key, comment: "") }
+
+    private static func format(_ key: String, _ arguments: CVarArg...) -> String {
+        String(format: localize(key), locale: Locale.current, arguments: arguments)
     }
 
     private static func bytes(_ n: UInt64) -> String {

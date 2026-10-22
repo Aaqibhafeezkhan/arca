@@ -6,9 +6,9 @@ enum ChangeStatus: Equatable {
 
     var label: String {
         switch self {
-        case .added: "Added"
-        case .modified: "Modified"
-        case .renamed: "Renamed"
+        case .added: L("Added")
+        case .modified: L("Modified")
+        case .renamed: L("Renamed")
         }
     }
 }

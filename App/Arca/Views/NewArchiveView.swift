@@ -120,14 +120,14 @@ struct NewArchiveView: View {
 
     private func label(for format: ArchiveFormat) -> String {
         switch format {
-        case .zip: "ZIP — universal, live editing"
-        case .sevenZip: "7Z — best compression"
-        case .rar: "RAR — via your installed rar"
-        case .tarGzip: "TAR.GZ — Unix standard"
-        case .tarXz: "TAR.XZ — smallest"
-        case .tarZstd: "TAR.ZST — fast & small"
+        case .zip: L("ZIP — universal, live editing")
+        case .sevenZip: L("7Z — best compression")
+        case .rar: L("RAR — via your installed rar")
+        case .tarGzip: L("TAR.GZ — Unix standard")
+        case .tarXz: L("TAR.XZ — smallest")
+        case .tarZstd: L("TAR.ZST — fast & small")
         case .tarBzip2: "TAR.BZ2"
-        case .tar: "TAR — uncompressed"
+        case .tar: L("TAR — uncompressed")
         default: format.displayName
         }
     }
@@ -135,22 +135,22 @@ struct NewArchiveView: View {
     private var footer: String {
         switch format {
         case .zip:
-            "ZIP archives can be edited live: adding, replacing or removing items never recompresses the rest."
+            L("ZIP archives can be edited live: adding, replacing or removing items never recompresses the rest.")
         case .sevenZip:
-            "7z gives the smallest archives. With encryption, file names are hidden too. Edits recompress only the blocks they touch."
+            L("7z gives the smallest archives. With encryption, file names are hidden too. Edits recompress only the blocks they touch.")
         case .rar:
-            "Created with RARLAB's rar. With encryption, file names are hidden too. RAR can't be empty: add some files."
+            L("Created with RARLAB's rar. With encryption, file names are hidden too. RAR can't be empty: add some files.")
         default:
-            "\(format.displayName) archives are rewritten in a single streaming pass when you apply changes."
+            LF("%@ archives are rewritten in a single streaming pass when you apply changes.", format.displayName)
         }
     }
 
     private var levelDescription: String {
         switch Int(level) {
-        case 0: "Store"
-        case 1...3: "Fast"
-        case 4...6: "Balanced"
-        default: "Best"
+        case 0: L("Store")
+        case 1...3: L("Fast")
+        case 4...6: L("Balanced")
+        default: L("Best")
         }
     }
 
@@ -162,13 +162,13 @@ struct NewArchiveView: View {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = true
-        panel.prompt = "Add"
+        panel.prompt = L("Add")
         if panel.runModal() == .OK { model.sources += panel.urls.filter { !model.sources.contains($0) } }
     }
 
     private func create() {
         let panel = NSSavePanel()
-        let stem = model.sources.count == 1 ? model.sources[0].deletingPathExtension().lastPathComponent : "Archive"
+        let stem = model.sources.count == 1 ? model.sources[0].deletingPathExtension().lastPathComponent : L("Archive")
         panel.nameFieldStringValue = "\(stem).\(format.preferredExtension)"
         panel.canCreateDirectories = true
         panel.isExtensionHidden = false
@@ -199,7 +199,7 @@ struct NewArchiveView: View {
                 WindowRouter.shared.open([url])
             } catch {
                 isWorking = false
-                self.error = error.localizedDescription
+                self.error = localizedError(error)
             }
         }
     }

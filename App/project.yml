@@ -67,6 +67,7 @@ targets:
     platform: macOS
     sources:
       - path: QuickLook
+      - path: Arca/Resources
     dependencies:
       - package: ArcaKit
         product: ArcaKit

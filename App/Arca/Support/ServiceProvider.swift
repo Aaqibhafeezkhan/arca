@@ -8,7 +8,7 @@ final class ServiceProvider: NSObject {
         let urls = fileURLs(from: pboard)
         guard let first = urls.first else { return }
         let format = AppSettings.shared.defaultFormat
-        let stem = urls.count == 1 ? first.deletingPathExtension().lastPathComponent : "Archive"
+        let stem = urls.count == 1 ? first.deletingPathExtension().lastPathComponent : L("Archive")
         let destination = uniqueURL(in: first.deletingLastPathComponent(), name: stem, ext: format.preferredExtension)
         let options = AppSettings.shared.writeOptions(password: nil)
         Task {
@@ -16,7 +16,7 @@ final class ServiceProvider: NSObject {
                 _ = try await Archive.compress(urls, into: destination, format: format, options: options)
                 NSWorkspace.shared.activateFileViewerSelecting([destination])
             } catch {
-                presentError("Couldn't compress the selected items", error)
+                presentError(L("Couldn't compress the selected items"), error)
             }
         }
     }
@@ -32,7 +32,7 @@ final class ServiceProvider: NSObject {
                     // Encrypted: hand over to the UI, which prompts for the password.
                     WindowRouter.shared.open([url])
                 } catch {
-                    presentError("Couldn't extract “\(url.lastPathComponent)”", error)
+                    presentError(LF("Couldn't extract “%@”", url.lastPathComponent), error)
                 }
             }
             if !results.isEmpty { NSWorkspace.shared.activateFileViewerSelecting(results) }
@@ -46,7 +46,7 @@ final class ServiceProvider: NSObject {
     private func presentError(_ title: String, _ error: Error) {
         let alert = NSAlert()
         alert.messageText = title
-        alert.informativeText = error.localizedDescription
+        alert.informativeText = localizedError(error)
         alert.alertStyle = .warning
         alert.runModal()
     }

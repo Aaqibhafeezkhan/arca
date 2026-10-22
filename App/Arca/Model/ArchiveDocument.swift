@@ -123,18 +123,18 @@ final class ArchiveDocument {
             if let path = UserDefaults.standard.string(forKey: "ArcaReveal") { reveal(path) }
         } catch let error as ArchiveError where error.isPasswordError {
             // Encrypted headers (e.g. 7z): the listing itself needs the password.
-            passwordPrompt = PasswordPrompt(message: error.localizedDescription, onCancel: { [weak self] in
-                self?.loadError = error.localizedDescription
+            passwordPrompt = PasswordPrompt(message: localizedError(error), onCancel: { [weak self] in
+                self?.loadError = localizedError(error)
             }) { [weak self] password in
                 Task { await self?.load(passwords: passwords + [password]) }
             }
         } catch {
-            loadError = error.localizedDescription
+            loadError = localizedError(error)
         }
     }
 
     func reload() {
-        perform("Reloading", cancellable: false) { [self] _ in
+        perform(L("Reloading"), cancellable: false) { [self] _ in
             guard let archive else { return }
             snapshot = try await archive.reload()
             pending = []
@@ -258,7 +258,7 @@ final class ArchiveDocument {
             do {
                 try await work(reporter)
             } catch let error as ArchiveError where error.isPasswordError {
-                passwordPrompt = PasswordPrompt(message: error.localizedDescription) { [weak self] password in
+                passwordPrompt = PasswordPrompt(message: localizedError(error)) { [weak self] password in
                     guard let self else { return }
                     Task {
                         try? await self.archive?.addPassword(password)
@@ -271,11 +271,11 @@ final class ArchiveDocument {
             } catch ArchiveError.cancelled {
                 // User cancelled; the engine already rolled back.
             } catch ArchiveError.modifiedExternally {
-                alert = AlertMessage(title: "The archive changed on disk",
-                                     message: "Another app modified “\(url.lastPathComponent)”. Reload to see the current contents.",
+                alert = AlertMessage(title: L("The archive changed on disk"),
+                                     message: LF("Another app modified “%@”. Reload to see the current contents.", url.lastPathComponent),
                                      reload: true)
             } catch {
-                alert = AlertMessage(title: "\(title) failed", message: error.localizedDescription)
+                alert = AlertMessage(title: LF("%@ failed", title), message: localizedError(error))
             }
         }
     }
@@ -285,8 +285,8 @@ final class ArchiveDocument {
     /// Applies immediately for in-place formats, stages otherwise.
     func submit(_ changes: [ArchiveChange], title: String) {
         guard editingMode.isEditable else {
-            alert = AlertMessage(title: "Read-only archive",
-                                 message: "\(snapshot?.format.displayName ?? "This") archives can't be modified. Extract the items you need instead.")
+            alert = AlertMessage(title: L("Read-only archive"),
+                                 message: LF("%@ archives can't be modified. Extract the items you need instead.", snapshot?.format.displayName ?? L("Archive")))
             return
         }
         if case .streamRewrite = editingMode {
@@ -314,7 +314,7 @@ final class ArchiveDocument {
     func applyPending() {
         guard !pending.isEmpty else { return }
         let changes = pending
-        perform("Saving changes") { [self] progress in
+        perform(L("Saving changes")) { [self] progress in
             try await commit(changes, progress: progress)
             pending.removeAll()
         }
@@ -323,7 +323,7 @@ final class ArchiveDocument {
     func discardPending() { pending.removeAll() }
 
     func compact() {
-        perform("Compacting") { [self] progress in
+        perform(L("Compacting")) { [self] progress in
             guard let archive else { return }
             snapshot = try await archive.compact(progress: progress)
         }
@@ -336,15 +336,15 @@ final class ArchiveDocument {
         let sources = urls.filter { !$0.path.hasPrefix(EditSessionManager.root.path) }
         guard !sources.isEmpty else { return }
         submit(sources.map { .add(source: $0, at: ArchivePath.join(target, $0.lastPathComponent)) },
-               title: "Adding \(sources.count == 1 ? "“\(sources[0].lastPathComponent)”" : "\(sources.count) items")")
+               title: sources.count == 1 ? LF("Adding “%@”", sources[0].lastPathComponent) : LF("Adding %lld items", Int64(sources.count)))
     }
 
     func presentAddPanel() {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = true
-        panel.prompt = "Add"
-        panel.message = "Choose files and folders to add to “\(currentFolder.isEmpty ? url.lastPathComponent : ArchivePath.lastComponent(currentFolder))”"
+        panel.prompt = L("Add")
+        panel.message = LF("Choose files and folders to add to “%@”", currentFolder.isEmpty ? url.lastPathComponent : ArchivePath.lastComponent(currentFolder))
         if panel.runModal() == .OK { add(panel.urls) }
     }
 
@@ -353,10 +353,10 @@ final class ArchiveDocument {
         guard !clean.isEmpty else { return }
         let path = ArchivePath.join(currentFolder, clean)
         guard tree.node(path) == nil else {
-            alert = AlertMessage(title: "Name already in use", message: "“\(clean)” already exists in this folder.")
+            alert = AlertMessage(title: L("Name already in use"), message: LF("“%@” already exists in this folder.", clean))
             return
         }
-        submit([.makeDirectory(path)], title: "Creating folder")
+        submit([.makeDirectory(path)], title: L("Creating folder"))
     }
 
     // MARK: Deleting & renaming
@@ -371,7 +371,7 @@ final class ArchiveDocument {
         deleteCandidates = []
         paths.forEach { sessions.end(under: $0) }
         selection.subtract(paths)
-        submit(paths.map { .delete($0) }, title: "Deleting")
+        submit(paths.map { .delete($0) }, title: L("Deleting"))
     }
 
     func rename(_ path: String, to newName: String) {
@@ -379,11 +379,11 @@ final class ArchiveDocument {
         guard !clean.isEmpty, clean != ArchivePath.lastComponent(path) else { return }
         let destination = ArchivePath.join(ArchivePath.parent(path), clean)
         guard tree.node(destination) == nil else {
-            alert = AlertMessage(title: "Name already in use", message: "“\(clean)” already exists in this folder.")
+            alert = AlertMessage(title: L("Name already in use"), message: LF("“%@” already exists in this folder.", clean))
             return
         }
         sessions.end(under: path)
-        submit([.rename(from: path, to: destination)], title: "Renaming")
+        submit([.rename(from: path, to: destination)], title: L("Renaming"))
         selection = [destination]
     }
 
@@ -394,7 +394,7 @@ final class ArchiveDocument {
         // Items from search results may live at different depths: extract
         // each group relative to its own parent.
         let groups = Dictionary(grouping: nodes.map(\.path), by: ArchivePath.parent)
-        perform("Extracting") { [self] progress in
+        perform(L("Extracting")) { [self] progress in
             guard let archive else { return }
             var results: [URL] = []
             for (base, group) in groups.sorted(by: { $0.key < $1.key }) {
@@ -413,8 +413,8 @@ final class ArchiveDocument {
     /// `paths` empty = whole archive.
     func extractWithDestinationChoice(_ paths: [String]) {
         if hasPendingChanges {
-            alert = AlertMessage(title: "Apply changes first",
-                                 message: "This archive has unsaved changes. Apply or discard them before extracting.")
+            alert = AlertMessage(title: L("Apply changes first"),
+                                 message: L("This archive has unsaved changes. Apply or discard them before extracting."))
             return
         }
         switch settings.extractionDestination {
@@ -427,9 +427,9 @@ final class ArchiveDocument {
             panel.canChooseDirectories = true
             panel.canChooseFiles = false
             panel.canCreateDirectories = true
-            panel.prompt = "Extract"
+            panel.prompt = L("Extract")
             panel.directoryURL = url.deletingLastPathComponent()
-            panel.message = paths.isEmpty ? "Extract all items to:" : "Extract \(paths.count) item\(paths.count == 1 ? "" : "s") to:"
+            panel.message = paths.isEmpty ? L("Extract all items to:") : LF(paths.count == 1 ? "Extract %lld item to:" : "Extract %lld items to:", Int64(paths.count))
             if panel.runModal() == .OK, let dest = panel.url { extract(paths, to: dest) }
         }
     }
@@ -438,10 +438,10 @@ final class ArchiveDocument {
 
     func openExternally(_ path: String, with app: URL? = nil) {
         guard statuses[path] != .added else {
-            alert = AlertMessage(title: "Not saved yet", message: "Apply pending changes before opening newly added items.")
+            alert = AlertMessage(title: L("Not saved yet"), message: L("Apply pending changes before opening newly added items."))
             return
         }
-        perform("Opening", cancellable: false) { [self] _ in
+        perform(L("Opening"), cancellable: false) { [self] _ in
             guard let archive else { return }
             let file = try await archive.extractForEditing(path, in: sessions.directory)
             if editingMode.isEditable, tree.node(path)?.isDirectory == false {
@@ -459,10 +459,10 @@ final class ArchiveDocument {
     /// watched like any opened item, so edits made there flow back here.
     func openInArca(_ path: String) {
         guard statuses[path] != .added else {
-            alert = AlertMessage(title: "Not saved yet", message: "Apply pending changes before opening newly added items.")
+            alert = AlertMessage(title: L("Not saved yet"), message: L("Apply pending changes before opening newly added items."))
             return
         }
-        perform("Opening", cancellable: false) { [self] _ in
+        perform(L("Opening"), cancellable: false) { [self] _ in
             guard let archive else { return }
             let file = try await archive.extractForEditing(path, in: sessions.directory)
             if editingMode.isEditable { sessions.begin(entryPath: path, fileURL: file) }
@@ -495,10 +495,10 @@ final class ArchiveDocument {
             try FileManager.default.createDirectory(at: snapshotURL.deletingLastPathComponent(), withIntermediateDirectories: true)
             try FileManager.default.copyItem(at: item.fileURL, to: snapshotURL)
         } catch {
-            alert = AlertMessage(title: "Couldn't read the edited file", message: error.localizedDescription)
+            alert = AlertMessage(title: L("Couldn't read the edited file"), message: localizedError(error))
             return
         }
-        submit([.add(source: snapshotURL, at: item.entryPath)], title: "Updating “\(ArchivePath.lastComponent(item.entryPath))”")
+        submit([.add(source: snapshotURL, at: item.entryPath)], title: LF("Updating “%@”", ArchivePath.lastComponent(item.entryPath)))
     }
 
     func ignoreWriteBack(_ item: WriteBack) {
@@ -522,13 +522,13 @@ final class ArchiveDocument {
             return
         }
         guard let path = selection.sorted().first, tree.node(path)?.isDirectory == false, statuses[path] != .added else { return }
-        perform("Preparing preview", cancellable: false) { [self] _ in
+        perform(L("Preparing preview"), cancellable: false) { [self] _ in
             quickLookURL = try await previewURL(for: path)
         }
     }
 
     func editAsText(_ path: String) {
-        perform("Loading", cancellable: false) { [self] _ in
+        perform(L("Loading"), cancellable: false) { [self] _ in
             guard let archive else { return }
             let data = try await archive.data(for: path, limit: 16 << 20)
             guard let text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else {
@@ -540,7 +540,7 @@ final class ArchiveDocument {
 
     func saveText(_ state: TextEditorState) {
         textEditor = nil
-        submit([.addData(Data(state.text.utf8), at: state.path)], title: "Saving “\(ArchivePath.lastComponent(state.path))”")
+        submit([.addData(Data(state.text.utf8), at: state.path)], title: LF("Saving “%@”", ArchivePath.lastComponent(state.path)))
     }
 
     // MARK: Drag out

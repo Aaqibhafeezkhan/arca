@@ -38,7 +38,7 @@ struct BrowserView: View {
             ContentUnavailableView {
                 Label("Empty Folder", systemImage: "folder")
             } description: {
-                Text(document.canEdit ? "Drop files here to add them to the archive." : "This folder has no items.")
+                Text(document.canEdit ? L("Drop files here to add them to the archive.") : L("This folder has no items."))
             } actions: {
                 if document.canEdit {
                     Button("Add Files…") { document.presentAddPanel() }
@@ -61,7 +61,7 @@ struct BrowserView: View {
             .width(min: 120, ideal: 190)
 
             TableColumn("Size", value: \.size) { row in
-                Text(row.isDirectory ? "\(row.itemCount) item\(row.itemCount == 1 ? "" : "s")" : row.size.formattedSize)
+                Text(row.isDirectory ? itemCount(row.itemCount) : row.size.formattedSize)
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .trailing)
@@ -164,7 +164,7 @@ private struct CompressionCell: View {
                     .gaugeStyle(.accessoryLinearCapacity)
                     .tint(.accentColor)
                     .frame(width: 32)
-                    .help("\(Int((ratio * 100).rounded()))% smaller")
+                    .help(LF("%d%% smaller", Int32((ratio * 100).rounded())))
             }
         } else {
             Text(row.hasPacked && !row.isDirectory ? row.packed.formattedSize : "—")
@@ -219,7 +219,7 @@ struct BrowserContextMenu: View {
                 }
             }
             Divider()
-            Button(nodes.count == 1 ? "Extract…" : "Extract \(nodes.count) Items…") {
+            Button(nodes.count == 1 ? L("Extract…") : LF("Extract %lld Items…", Int64(nodes.count))) {
                 document.extractWithDestinationChoice(Array(selection))
             }
             if document.canEdit {

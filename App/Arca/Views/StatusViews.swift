@@ -42,9 +42,9 @@ struct PathBar: View {
         let rows = document.rows
         if !document.selection.isEmpty {
             let size = document.selectedNodes.reduce(UInt64(0)) { $0 + $1.uncompressedSize }
-            return "\(document.selection.count) of \(rows.count) selected · \(size.formattedSize)"
+            return LF("%lld of %lld selected · %@", Int64(document.selection.count), Int64(rows.count), size.formattedSize)
         }
-        return "\(rows.count) item\(rows.count == 1 ? "" : "s")"
+        return itemCount(rows.count)
     }
 }
 
@@ -60,11 +60,11 @@ struct WriteBackBanner: View {
                         .font(.title3)
                         .foregroundStyle(.tint)
                     VStack(alignment: .leading, spacing: 1) {
-                        Text("“\(ArchivePath.lastComponent(item.entryPath))” was edited")
+                        Text(LF("“%@” was edited", ArchivePath.lastComponent(item.entryPath)))
                             .font(.callout.weight(.semibold))
                         Text(document.editingMode == .inPlace
-                             ? "Update the archive with the saved version?"
-                             : "Stage the saved version for the next apply?")
+                             ? L("Update the archive with the saved version?")
+                             : L("Stage the saved version for the next apply?"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -122,7 +122,7 @@ private struct ActivityPill: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(activity.title).font(.callout.weight(.semibold))
                         if activity.progress.total > 0 {
-                            Text("\(UInt64(activity.progress.completed).formattedSize) of \(UInt64(activity.progress.total).formattedSize)")
+                            Text(LF("%@ of %@", UInt64(activity.progress.completed).formattedSize, UInt64(activity.progress.total).formattedSize))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .monospacedDigit()
@@ -171,11 +171,11 @@ private struct PendingChangesPill: View {
     }
 
     private var caption: String {
-        let format = document.snapshot?.format.displayName ?? "The archive"
+        let format = document.snapshot?.format.displayName ?? L("The archive")
         if case .streamRewrite(true) = document.editingMode {
-            return "\(format) will be re-streamed in one pass"
+            return LF("%@ will be re-streamed in one pass", format)
         }
-        return "\(format) will be rewritten in one pass"
+        return LF("%@ will be rewritten in one pass", format)
     }
 }
 

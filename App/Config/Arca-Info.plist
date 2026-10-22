@@ -88,6 +88,12 @@
 			<dict>
 				<key>default</key>
 				<string>Compress with Arca</string>
+				<key>it</key>
+				<string>Comprimi con Arca</string>
+				<key>fr</key>
+				<string>Compresser avec Arca</string>
+				<key>es</key>
+				<string>Comprimir con Arca</string>
 			</dict>
 			<key>NSMessage</key>
 			<string>compressFiles</string>
@@ -105,6 +111,12 @@
 			<dict>
 				<key>default</key>
 				<string>Extract with Arca</string>
+				<key>it</key>
+				<string>Estrai con Arca</string>
+				<key>fr</key>
+				<string>Extraire avec Arca</string>
+				<key>es</key>
+				<string>Extraer con Arca</string>
 			</dict>
 			<key>NSMessage</key>
 			<string>extractArchives</string>

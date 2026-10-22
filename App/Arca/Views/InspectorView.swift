@@ -100,7 +100,7 @@ private struct EntryInspector: View {
                     Label("Open", systemImage: "arrow.up.forward.app")
                 }
                 .buttonStyle(.borderedProminent)
-                .help(document.canEdit ? "Open in the default app. Saved changes flow back into the archive." : "Open a copy in the default app.")
+                .help(document.canEdit ? L("Open in the default app. Saved changes flow back into the archive.") : L("Open a copy in the default app."))
 
                 Menu {
                     ForEach(document.applications(for: node.path), id: \.self) { app in
@@ -130,26 +130,26 @@ private struct EntryInspector: View {
     private var info: [(String, String)] {
         var rows: [(String, String)] = []
         if node.isDirectory {
-            rows.append(("Contains", "\(node.descendantCount) item\(node.descendantCount == 1 ? "" : "s")"))
+            rows.append((L("Contains"), itemCount(node.descendantCount)))
         }
-        rows.append(("Size", node.uncompressedSize.formattedSize))
+        rows.append((L("Size"), node.uncompressedSize.formattedSize))
         if let packed = node.compressedSize, document.statuses[node.path] == nil {
-            rows.append(("Compressed", packed.formattedSize))
+            rows.append((L("Compressed"), packed.formattedSize))
             if node.uncompressedSize > 0 {
                 let saved = max(0, 1 - Double(packed) / Double(node.uncompressedSize))
-                rows.append(("Saved", saved.formatted(.percent.precision(.fractionLength(0)))))
+                rows.append((L("Saved"), saved.formatted(.percent.precision(.fractionLength(0)))))
             }
         }
-        if let date = node.modificationDate { rows.append(("Modified", date.formatted(date: .long, time: .shortened))) }
+        if let date = node.modificationDate { rows.append((L("Modified"), date.formatted(date: .long, time: .shortened))) }
         if let entry = node.entry {
-            if let method = entry.method { rows.append(("Method", method)) }
+            if let method = entry.method { rows.append((L("Method"), method)) }
             if let crc = entry.crc32 { rows.append(("CRC-32", String(format: "%08X", crc))) }
-            if let perms = entry.posixPermissions { rows.append(("Permissions", perms.permissionString)) }
-            if let link = entry.linkTarget { rows.append(("Links to", link)) }
-            if entry.isEncrypted { rows.append(("Encryption", "Password protected")) }
+            if let perms = entry.posixPermissions { rows.append((L("Permissions"), perms.permissionString)) }
+            if let link = entry.linkTarget { rows.append((L("Links to"), link)) }
+            if entry.isEncrypted { rows.append((L("Encryption"), L("Password protected"))) }
         }
-        if let status = document.statuses[node.path] { rows.append(("Status", "\(status.label) — not saved yet")) }
-        rows.append(("Path", node.path))
+        if let status = document.statuses[node.path] { rows.append((L("Status"), LF("%@ — not saved yet", status.label))) }
+        rows.append((L("Path"), node.path))
         return rows
     }
 }
@@ -163,13 +163,13 @@ private struct MultiSelectionInspector: View {
                 Image(systemName: "square.stack.3d.up")
                     .font(.system(size: 32))
                     .foregroundStyle(.tint)
-                Text("\(nodes.count) items")
+                Text(itemCount(nodes.count))
                     .font(.title3.weight(.semibold))
             }
             InfoGrid(rows: [
-                ("Size", nodes.reduce(UInt64(0)) { $0 + $1.uncompressedSize }.formattedSize),
-                ("Folders", "\(nodes.filter(\.isDirectory).count)"),
-                ("Files", "\(nodes.filter { !$0.isDirectory }.count)"),
+                (L("Size"), nodes.reduce(UInt64(0)) { $0 + $1.uncompressedSize }.formattedSize),
+                (L("Folders"), "\(nodes.filter(\.isDirectory).count)"),
+                (L("Files"), "\(nodes.filter { !$0.isDirectory }.count)"),
             ])
         }
     }
@@ -191,7 +191,7 @@ private struct ArchiveInspector: View {
                         Text(document.url.lastPathComponent)
                             .font(.title3.weight(.semibold))
                             .lineLimit(2)
-                        Text("\(snapshot.format.displayName) archive")
+                        Text(LF("%@ archive", snapshot.format.displayName))
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     }
@@ -218,7 +218,7 @@ private struct ArchiveInspector: View {
                 if snapshot.statistics.reclaimableBytes > 0 {
                     GroupBox {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("\(snapshot.statistics.reclaimableBytes.formattedSize) can be reclaimed")
+                            Text(LF("%@ can be reclaimed", snapshot.statistics.reclaimableBytes.formattedSize))
                                 .font(.callout.weight(.semibold))
                             Text("Earlier versions of edited or deleted items still occupy space. Compacting copies the remaining items without recompressing them.")
                                 .font(.caption)
@@ -252,7 +252,7 @@ private struct ArchiveInspector: View {
                 }
 
                 ForEach(snapshot.notes, id: \.self) { note in
-                    Label(note, systemImage: "info.circle")
+                    Label(localizedNote(note, format: snapshot.format.displayName), systemImage: "info.circle")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -280,14 +280,14 @@ private struct ArchiveInspector: View {
     private func stats(_ snapshot: ArchiveSnapshot) -> [(String, String)] {
         let s = snapshot.statistics
         var rows: [(String, String)] = [
-            ("Files", "\(s.fileCount)"),
-            ("Folders", "\(snapshot.tree.nodes.values.filter(\.isDirectory).count - 1)"),
-            ("Archive size", s.archiveSize.formattedSize),
-            ("Uncompressed", s.totalUncompressed.formattedSize),
+            (L("Files"), "\(s.fileCount)"),
+            (L("Folders"), "\(snapshot.tree.nodes.values.filter(\.isDirectory).count - 1)"),
+            (L("Archive size"), s.archiveSize.formattedSize),
+            (L("Uncompressed"), s.totalUncompressed.formattedSize),
         ]
         if s.totalUncompressed > 0, s.archiveSize > 0 {
             let saved = max(0, 1 - Double(s.archiveSize) / Double(s.totalUncompressed))
-            rows.append(("Saved", saved.formatted(.percent.precision(.fractionLength(0)))))
+            rows.append((L("Saved"), saved.formatted(.percent.precision(.fractionLength(0)))))
         }
         return rows
     }
