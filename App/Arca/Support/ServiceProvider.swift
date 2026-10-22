@@ -11,11 +11,27 @@ final class ServiceProvider: NSObject {
         let stem = urls.count == 1 ? first.deletingPathExtension().lastPathComponent : L("Archive")
         let destination = uniqueURL(in: first.deletingLastPathComponent(), name: stem, ext: format.preferredExtension)
         let options = AppSettings.shared.writeOptions(password: nil)
+        let activity = ServiceProgressWindow(title: L("Compressing…"), filename: destination.lastPathComponent)
+        activity.show()
         Task {
+            defer { activity.close() }
+            // Publish only the finished archive; cancellation must not leave an empty one behind.
+            let staging = destination.deletingLastPathComponent()
+                .appendingPathComponent(".arca-compress-\(UUID().uuidString)", isDirectory: true)
+            defer { try? FileManager.default.removeItem(at: staging) }
             do {
-                _ = try await Archive.compress(urls, into: destination, format: format, options: options)
+                try FileManager.default.createDirectory(at: staging, withIntermediateDirectories: true)
+                let temporary = staging.appendingPathComponent(destination.lastPathComponent)
+                _ = try await Archive.compress(urls, into: temporary, format: format, options: options,
+                                               progress: activity.progress)
+                guard !activity.progress.isCancelled else { return }
+                try FileManager.default.moveItem(at: temporary, to: destination)
+                activity.close()
                 NSWorkspace.shared.activateFileViewerSelecting([destination])
+            } catch ArchiveError.cancelled {
+                // Cancellation is an expected outcome, not an error alert.
             } catch {
+                activity.close()
                 presentError(L("Couldn't compress the selected items"), error)
             }
         }
@@ -23,18 +39,32 @@ final class ServiceProvider: NSObject {
 
     @objc func extractArchives(_ pboard: NSPasteboard, userData: String?, error: AutoreleasingUnsafeMutablePointer<NSString?>) {
         let urls = fileURLs(from: pboard).filter(ArchiveTypes.isArchive)
+        guard let first = urls.first else { return }
+        let activity = ServiceProgressWindow(title: L("Extracting…"), filename: first.lastPathComponent)
+        activity.show()
         Task {
+            defer { activity.close() }
             var results: [URL] = []
-            for url in urls {
+            for (index, url) in urls.enumerated() {
+                guard !activity.progress.isCancelled else { break }
+                activity.beginArchive(url, index: index + 1, count: urls.count)
                 do {
-                    results.append(try await SmartExtract.run(url))
+                    results.append(try await SmartExtract.run(url, progress: activity.progress))
+                } catch ArchiveError.cancelled {
+                    break
                 } catch ArchiveError.passwordRequired(_) {
+                    guard !activity.progress.isCancelled else { break }
                     // Encrypted: hand over to the UI, which prompts for the password.
+                    activity.close()
                     WindowRouter.shared.open([url])
                 } catch {
+                    guard !activity.progress.isCancelled else { break }
+                    activity.close()
                     presentError(LF("Couldn't extract “%@”", url.lastPathComponent), error)
                 }
+                if index + 1 < urls.count, !activity.progress.isCancelled { activity.show() }
             }
+            activity.close()
             if !results.isEmpty { NSWorkspace.shared.activateFileViewerSelecting(results) }
         }
     }
@@ -56,12 +86,14 @@ enum SmartExtract {
     /// Like Archive Utility: a single top-level item lands next to the
     /// archive as-is; multiple items go into a folder named after it.
     @MainActor
-    static func run(_ archiveURL: URL) async throws -> URL {
+    static func run(_ archiveURL: URL, progress: ArcaKit.ProgressReporter? = nil) async throws -> URL {
         let parent = archiveURL.deletingLastPathComponent()
         let staging = parent.appendingPathComponent(".arca-extract-\(UUID().uuidString)", isDirectory: true)
         let archive = try await Archive.open(archiveURL)
         do {
-            let items = try await archive.extract([], to: staging, conflict: .overwrite)
+            guard progress?.isCancelled != true else { throw ArchiveError.cancelled }
+            let items = try await archive.extract([], to: staging, conflict: .overwrite, progress: progress)
+            guard progress?.isCancelled != true else { throw ArchiveError.cancelled }
             let fm = FileManager.default
             let result: URL
             if items.count == 1, let only = items.first {

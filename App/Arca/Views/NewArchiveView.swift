@@ -20,8 +20,9 @@ struct NewArchiveView: View {
     @State private var password = ""
     @State private var confirmation = ""
     @State private var error: String?
-    @State private var isWorking = false
-    @State private var progress = ArcaKit.ProgressReporter()
+    @State private var activity: ServiceProgressWindow?
+
+    private var isWorking: Bool { activity != nil }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -89,19 +90,19 @@ struct NewArchiveView: View {
                 }
             }
             .formStyle(.grouped)
+            .disabled(isWorking)
 
             Divider()
             HStack {
-                if isWorking {
-                    ProgressView().controlSize(.small)
-                    Text("Creating…").foregroundStyle(.secondary)
-                } else if let error {
+                if let error {
                     Label(error, systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.red)
                         .lineLimit(2)
                 }
                 Spacer()
-                Button("Cancel") { close() }
+                Button("Cancel") {
+                    if let activity { activity.progress.cancel() } else { close() }
+                }
                     .keyboardShortcut(.cancelAction)
                 Button("Create…", action: create)
                     .keyboardShortcut(.defaultAction)
@@ -116,6 +117,7 @@ struct NewArchiveView: View {
             level = Double(settings.compressionLevel)
         }
         .onChange(of: format) { _, f in if !f.supportsEncryption { encrypt = false } }
+        .onDisappear { activity?.progress.cancel() }
     }
 
     private func label(for format: ArchiveFormat) -> String {
@@ -167,6 +169,7 @@ struct NewArchiveView: View {
     }
 
     private func create() {
+        guard !isWorking else { return }
         let panel = NSSavePanel()
         let stem = model.sources.count == 1 ? model.sources[0].deletingPathExtension().lastPathComponent : L("Archive")
         panel.nameFieldStringValue = "\(stem).\(format.preferredExtension)"
@@ -182,23 +185,41 @@ struct NewArchiveView: View {
         var options = settings.writeOptions(password: encrypt ? password : nil)
         options.compressionLevel = Int(level)
         let sources = model.sources
-        isWorking = true
+        let selectedFormat = format
+        let activity = ServiceProgressWindow(title: L("Creating…"), filename: url.lastPathComponent)
+        self.activity = activity
         error = nil
+        activity.show()
         Task {
+            // Keep the destination intact until creation has succeeded, including on cancellation.
+            let staging = url.deletingLastPathComponent()
+                .appendingPathComponent(".arca-create-\(UUID().uuidString)", isDirectory: true)
+            defer {
+                try? FileManager.default.removeItem(at: staging)
+                activity.close()
+                self.activity = nil
+            }
             do {
+                guard !activity.progress.isCancelled else { return }
+                try FileManager.default.createDirectory(at: staging, withIntermediateDirectories: true)
+                let temporary = staging.appendingPathComponent(url.lastPathComponent)
+                if sources.isEmpty {
+                    _ = try await Archive.create(temporary, format: selectedFormat)
+                } else {
+                    _ = try await Archive.compress(sources, into: temporary, format: selectedFormat, options: options,
+                                                   progress: activity.progress)
+                }
+                guard !activity.progress.isCancelled else { return }
                 if FileManager.default.fileExists(atPath: url.path) {
                     try FileManager.default.trashItem(at: url, resultingItemURL: nil)
                 }
-                if sources.isEmpty {
-                    _ = try await Archive.create(url, format: format)
-                } else {
-                    _ = try await Archive.compress(sources, into: url, format: format, options: options, progress: progress)
-                }
-                isWorking = false
+                try FileManager.default.moveItem(at: temporary, to: url)
+                activity.close()
                 close()
                 WindowRouter.shared.open([url])
+            } catch ArchiveError.cancelled {
+                // Keep the form and its inputs available for another attempt.
             } catch {
-                isWorking = false
                 self.error = localizedError(error)
             }
         }
