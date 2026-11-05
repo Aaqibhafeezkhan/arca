@@ -135,15 +135,34 @@ Double-clicking an entry extracts **only that entry** into a private temp folder
 
 ## Command-line tool
 
+The app includes the `arca` executable. After dragging **Arca.app** into **Applications**, install the shell command once:
+
 ```bash
-swift run arca list   archive.zip
-swift run arca add    archive.zip notes.md docs/notes.md     # in-place
-swift run arca mv     archive.zip docs documentation          # raw copy, no recompression
-swift run arca rm     archive.zip old/
-swift run arca create backup.tar.xz ~/Projects/foo
-swift run arca add    secret.zip report.pdf -p "password"     # AES-256
-swift run arca compact archive.zip
+sudo /Applications/Arca.app/Contents/Resources/install-cli.sh
+arca --version
 ```
+
+This creates `/usr/local/bin/arca` as a symlink to the executable inside the app. You can then use `arca` from any directory, without the source code, Swift or Xcode. Updating `/Applications/Arca.app` updates the CLI too; keep the app at that location. The CLI also uses the app's bundled 7-Zip.
+
+If `/usr/local/bin` is not on your `PATH`, add `export PATH="/usr/local/bin:$PATH"` to `~/.zprofile` and open a new terminal. For an installation without administrator access, pass a user-owned directory instead:
+
+```bash
+/Applications/Arca.app/Contents/Resources/install-cli.sh "$HOME/.local/bin"
+```
+
+Add that directory to your `PATH` if needed. The installer leaves any existing unrelated `arca` command untouched. To uninstall the default shell command, run `sudo rm /usr/local/bin/arca`.
+
+```bash
+arca list   archive.zip
+arca add    archive.zip notes.md docs/notes.md     # in-place
+arca mv     archive.zip docs documentation        # raw copy, no recompression
+arca rm     archive.zip old/
+arca create backup.tar.xz ~/Projects/foo
+arca add    secret.zip report.pdf -p "password"   # AES-256
+arca compact archive.zip
+```
+
+When developing from a checkout, use `swift run arca …` instead. A standalone CLI is also available in the release's `arca-cli-<version>-macos-universal.tar.gz`; place its executable in a directory on your `PATH` (install `7zz` separately for formats that require it).
 
 ## Build from source
 

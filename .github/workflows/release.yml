@@ -35,10 +35,14 @@ jobs:
       - name: Build app
         run: App/Scripts/build-app.sh dist
 
-      - name: Build CLI (universal)
+      - name: Check CLI installation
+        run: App/Tests/cli-install.sh dist/Arca.app
+
+      - name: Package bundled CLI
         run: |
-          swift build -c release --arch arm64 --arch x86_64 --product arca
-          BIN="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/arca"
+          BIN="dist/Arca.app/Contents/MacOS/arca-cli"
+          lipo -verify_arch arm64 "$BIN"
+          lipo -verify_arch x86_64 "$BIN"
           mkdir -p cli && cp "$BIN" cli/arca && cp LICENSE cli/
           codesign --force --sign - cli/arca
           cli/arca --version

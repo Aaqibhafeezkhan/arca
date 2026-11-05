@@ -17,4 +17,7 @@ xcodebuild -project Arca.xcodeproj -scheme Arca -configuration Release \
 rm -rf "$OUT/Arca.app"
 ditto "$ROOT/build/DerivedData/Build/Products/Release/Arca.app" "$OUT/Arca.app"
 codesign --verify --deep --strict "$OUT/Arca.app"
+test -x "$OUT/Arca.app/Contents/MacOS/Arca"
+"$OUT/Arca.app/Contents/MacOS/arca-cli" --version
+test -x "$OUT/Arca.app/Contents/Resources/install-cli.sh"
 echo "→ $OUT/Arca.app ($(defaults read "$OUT/Arca.app/Contents/Info" CFBundleShortVersionString))"

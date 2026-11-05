@@ -58,3 +58,8 @@ jobs:
           APP=$(find ~/Library/Developer/Xcode/DerivedData -name Arca.app -path '*Debug*' | head -1)
           "$APP/Contents/MacOS/7zz" | head -1
           test -f "$APP/Contents/Resources/7-Zip License.txt"
+      - name: Check CLI installation
+        shell: bash
+        run: |
+          APP=$(find ~/Library/Developer/Xcode/DerivedData -name Arca.app -path '*Debug*' | head -1)
+          App/Tests/cli-install.sh "$APP"

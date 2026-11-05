@@ -26,6 +26,12 @@ public enum ExternalTools {
         if let bundled = Bundle.main.url(forAuxiliaryExecutable: tool), fm.isExecutableFile(atPath: bundled.path) {
             return bundled
         }
+        // A CLI launched through a PATH symlink may not be recognized as part
+        // of its app bundle. Resolve the executable before looking beside it.
+        if let executable = Bundle.main.executableURL {
+            let sibling = executable.resolvingSymlinksInPath().deletingLastPathComponent().appendingPathComponent(tool)
+            if fm.isExecutableFile(atPath: sibling.path) { return sibling }
+        }
         var directories = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"]
         directories += (ProcessInfo.processInfo.environment["PATH"] ?? "").split(separator: ":").map(String.init)
         for dir in directories {

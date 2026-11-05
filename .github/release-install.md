@@ -8,4 +8,13 @@
    ```
 3. Optional: `brew install --cask rar` to edit and create RAR archives.
 
-The command-line tool is in `arca-cli-<version>-macos-universal.tar.gz`. Requires macOS 14 or later (Apple silicon and Intel).
+To enable the bundled shell command after installing the app, run once:
+
+```bash
+sudo /Applications/Arca.app/Contents/Resources/install-cli.sh
+arca --version
+```
+
+Then use `arca list archive.zip` from any directory. The installer links `/usr/local/bin/arca` to the executable in the app, so app updates also update the command. Keep the app in `/Applications`; make sure `/usr/local/bin` is on your `PATH`.
+
+A standalone command-line tool is also in `arca-cli-<version>-macos-universal.tar.gz`. Requires macOS 14 or later (Apple silicon and Intel).

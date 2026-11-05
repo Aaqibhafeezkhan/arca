@@ -30,10 +30,17 @@ targets:
     platform: macOS
     sources:
       - path: Arca
+      - path: Scripts/install-cli.sh
+        buildPhase: resources
     dependencies:
       - package: ArcaKit
         product: ArcaKit
       - target: ArcaQuickLook
+      - target: ArcaCLI
+        link: false
+        embed: true
+        copy:
+          destination: executables
     settings:
       base:
         PRODUCT_NAME: Arca
@@ -61,6 +68,22 @@ targets:
             [ "$CONFIGURATION" = "Release" ] && [ "$EXPANDED_CODE_SIGN_IDENTITY" != "-" ] && TS="--timestamp"
             codesign --force --sign "$EXPANDED_CODE_SIGN_IDENTITY" --options runtime $TS "$BIN"
           fi
+
+  ArcaCLI:
+    type: tool
+    platform: macOS
+    sources:
+      - path: ../Sources/arca
+    dependencies:
+      - package: ArcaKit
+        product: ArcaKit
+    settings:
+      base:
+        # Keep this distinct from the GUI's "Arca" on case-insensitive volumes.
+        PRODUCT_NAME: arca-cli
+        PRODUCT_BUNDLE_IDENTIFIER: com.marcovisona.Arca.CLI
+        SWIFT_VERSION: 6.0
+        SKIP_INSTALL: YES
 
   ArcaQuickLook:
     type: app-extension
